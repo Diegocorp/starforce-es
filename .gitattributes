@@ -3,6 +3,8 @@
 /Instalar.bat -text
 /Desinstalar.bat -text
 /Crear_mod_Fluffy.bat -text
+/*.sh -text
 /LEEME.txt -text
 /programa/** -text
 /licencias/** -text
+tools/patcher/*.sh text eol=lf

@@ -1,20 +1,21 @@
 ﻿MEGA MAN STAR FORCE LEGACY COLLECTION
 Traducción al español de Mega Man Star Force y de los menús de la colección
-Versión 1.0 (noviembre de 2026)
+Versión 1.1 (noviembre de 2026)
 Traducción: Diegocorp
 
 ======================================================================
  ÍNDICE
   1. Qué incluye
   2. Requisitos
-  3. Instalación
-  4. Elegir el idioma en el juego
-  5. Desinstalación
-  6. Si el juego se actualiza
-  7. Problemas conocidos
-  8. Preguntas frecuentes
-  9. Créditos
- 10. Aviso legal
+  3. Instalación en Windows
+  4. Instalación en Steam Deck (o Linux)
+  5. Elegir el idioma en el juego
+  6. Desinstalación
+  7. Si el juego se actualiza
+  8. Problemas conocidos
+  9. Preguntas frecuentes
+ 10. Créditos
+ 11. Aviso legal
 ======================================================================
 
 
@@ -36,41 +37,40 @@ Todavía no incluye:
 2. REQUISITOS
 -------------
 - Una copia legal de Mega Man Star Force Legacy Collection de Steam, en
-  Windows 10 u 11 de 64 bits.
+  Windows 10 u 11 de 64 bits, o en Steam Deck (u otro Linux con Steam y
+  Proton; ahí el instalador usa el Python 3.11 o más reciente del sistema).
 - Versión compatible: la de Steam del 31/10/2026 (build 23297979). Con otra
   versión el parche también se instala, pero las líneas que el juego haya
-  cambiado se quedan en inglés (lee la sección 6).
+  cambiado se quedan en inglés (lee la sección 7).
 - REFramework, un programa gratuito y de código abierto que permite que el
-  juego cargue archivos modificados. El parche se probó con la versión
-  nightly-01436. Para instalarlo:
-    1. Descarga REFramework.zip de
-       https://github.com/praydog/REFramework-nightly/releases
-    2. Copia el archivo dinput8.dll que viene dentro del .zip a la carpeta
-       del juego (la carpeta donde está
-       MEGAMAN_STARFORCE_Legacy_Collection.exe).
-    3. Abre el juego una vez y ciérralo.
-  REFramework necesita tener activada su opción "Loose File Loader". Si usas
-  Instalar.bat, el instalador la activa si hace falta (te lo pregunta
-  antes).
+  juego cargue archivos modificados. Si no lo tienes, Instalar.bat (o
+  Instalar_SteamDeck.sh) te ofrece instalarlo: descarga de su página
+  oficial la versión con la que se probó el parche (nightly-01436),
+  comprueba que el archivo sea exactamente ese y lo deja configurado.
+  Crear_mod_Fluffy.bat no lo descarga.
+  Si prefieres instalarlo a mano: descarga REFramework.zip de
+  https://github.com/praydog/REFramework-nightly/releases y copia
+  dinput8.dll en la carpeta del juego (la carpeta donde está
+  MEGAMAN_STARFORCE_Legacy_Collection.exe).
+- Conexión a internet solo si el instalador descarga REFramework.
 - Unos 100 MB libres en el disco donde está el juego.
 
 
-3. INSTALACIÓN
---------------
+3. INSTALACIÓN EN WINDOWS
+-------------------------
 Opción A (recomendada): el instalador incluido
 
   1. Descomprime este .zip en cualquier carpeta (por ejemplo, en el
      Escritorio). No ejecutes Instalar.bat desde dentro del .zip. Si
      Windows muestra una advertencia de seguridad, elige "Ejecutar" (o
      "Más información" > "Ejecutar de todas formas").
-  2. Cierra el juego.
-  3. Haz doble clic en Instalar.bat.
-  4. El instalador busca el juego en tus bibliotecas de Steam, revisa
-     REFramework, genera los archivos en español a partir de TU copia del
-     juego y los copia en la carpeta natives\ del juego. Tarda menos de un
-     minuto. Cuando te pregunte algo, escribe S (sí) o N (no) y presiona
-     Enter.
-  5. Al terminar, sigue con la sección 4.
+  2. Cierra el juego y haz doble clic en Instalar.bat.
+  3. El instalador busca el juego en tus bibliotecas de Steam, instala
+     REFramework si falta (te pregunta antes), genera los archivos en
+     español a partir de TU copia del juego y los copia en la carpeta
+     natives\ del juego. Tarda menos de un minuto. Cuando te pregunte algo,
+     escribe S (sí) o N (no) y presiona Enter.
+  4. Al terminar, sigue con la sección 5.
 
   Si el instalador no encuentra el juego, te pedirá la ruta de su carpeta.
   Para verla: en Steam, haz clic derecho sobre el juego > Administrar >
@@ -81,20 +81,60 @@ Opción A (recomendada): el instalador incluido
 Opción B: Fluffy Mod Manager
 
   1. Descomprime este .zip y haz doble clic en Crear_mod_Fluffy.bat.
-  2. Se crea el archivo MMSFLC_Espanol_v1.0_Fluffy.zip en esta misma
+  2. Se crea el archivo MMSFLC_Espanol_v1.1_Fluffy.zip en esta misma
      carpeta.
   3. En Fluffy Mod Manager, elige el juego, arrastra ese .zip a la ventana
      y activa el mod.
   4. El juego carga el mod solo con REFramework y su "Loose File Loader"
-     activado. Crear_mod_Fluffy.bat no lo activa: abre el juego, presiona
-     Insert, entra en LooseFileLoader, marca "Enable Loose File Loader" y
-     reinicia el juego.
+     activado. Si REFramework ya está instalado, Crear_mod_Fluffy.bat te
+     ofrece activarlo; si no, abre el juego, presiona Insert, entra en
+     LooseFileLoader, marca "Enable Loose File Loader" y reinicia el juego.
 
   Ese .zip contiene archivos generados a partir de tu copia del juego: es
   solo para tu uso, no lo compartas.
 
 
-4. ELEGIR EL IDIOMA EN EL JUEGO
+4. INSTALACIÓN EN STEAM DECK (O LINUX)
+--------------------------------------
+  1. Cambia al modo escritorio: botón Steam > Encender/Apagar > Cambiar a
+     Escritorio (o mantén presionado el botón de encendido y elige Cambiar
+     a Escritorio).
+     En el modo escritorio, el panel táctil derecho mueve el puntero, R2
+     hace clic y L2 hace clic derecho. Para escribir, abre el teclado en
+     pantalla con Steam + X.
+  2. Descarga este .zip con un navegador (si no tienes uno, instala Firefox
+     desde Discover) o cópialo desde tu PC con una memoria USB o microSD.
+     Descomprímelo: clic derecho sobre el archivo > Extraer > Extraer aquí
+     (con el escritorio en inglés: Extract > Extract here). Se crea la
+     carpeta MMSFLC_Espanol_v1.1.
+  3. Abre la carpeta MMSFLC_Espanol_v1.1, haz clic derecho en un espacio
+     vacío > Abrir terminal aquí (con el escritorio en inglés: Open
+     Terminal Here) y escribe:
+
+         bash Instalar_SteamDeck.sh
+
+     y presiona Enter.
+  4. Cuando te pregunte algo, escribe S (sí) y presiona Enter. El
+     instalador busca el juego (también en la tarjeta microSD), instala
+     REFramework si falta, genera los archivos en español a partir de tu
+     copia del juego y los instala.
+  5. Solo la primera vez: en Steam, haz clic derecho sobre el juego >
+     Propiedades > General > Configuraciones de lanzamiento (con Steam en
+     inglés: Launch Options) y escribe exactamente:
+
+         WINEDLLOVERRIDES="dinput8=n,b" %command%
+
+     Sin esa línea, Proton no carga REFramework y el juego sigue en
+     inglés. El instalador te avisa si todavía falta.
+  6. Vuelve al modo de juego y abre el juego. El menú de REFramework queda
+     cerrado; se abre y se cierra presionando las dos palancas a la vez
+     (L3 + R3).
+
+  El instalador para Steam Deck se probó en Linux, pero todavía no en un
+  Steam Deck. Si algo no funciona, repórtalo (sección 9).
+
+
+5. ELEGIR EL IDIOMA EN EL JUEGO
 -------------------------------
 El parche reemplaza el texto en inglés, así que el texto del juego tiene
 que estar en inglés. Si al abrir el juego los menús no aparecen en
@@ -103,36 +143,39 @@ parche, esa ruta se ve como Opciones > Opciones generales > Idioma >
 Texto) y elige "English". El idioma de las voces no cambia nada.
 
 Si ya está en "English" y el texto sigue en inglés, revisa que dinput8.dll
-esté en la carpeta del juego y que el "Loose File Loader" de REFramework
-esté activado (sección 2).
+esté en la carpeta del juego, que el "Loose File Loader" de REFramework
+esté activado y, en Steam Deck, la opción de lanzamiento (sección 4).
 
 
-5. DESINSTALACIÓN
+6. DESINSTALACIÓN
 -----------------
-- Si usaste Instalar.bat: haz doble clic en Desinstalar.bat. Quita los
-  archivos del parche que no hayan cambiado desde la instalación y vuelve
-  a poner los archivos de otros mods que el parche hubiera reemplazado. Si
-  otro mod cambió alguno de esos archivos, lo deja como está y te dice
-  cuál es.
+- En Windows: haz doble clic en Desinstalar.bat. En Steam Deck: abre una
+  terminal en la carpeta del parche, escribe bash Desinstalar_SteamDeck.sh
+  y presiona Enter.
+- El desinstalador quita los archivos del parche que no hayan cambiado
+  desde la instalación y vuelve a poner los archivos de otros mods que el
+  parche hubiera reemplazado. Si otro mod cambió alguno de esos archivos,
+  lo deja como está y te dice cuál es.
+- Si el parche instaló REFramework, el desinstalador te pregunta si
+  también quieres quitarlo. En Steam Deck, si lo quitas, también puedes
+  borrar la opción de lanzamiento.
 - Si usaste Fluffy Mod Manager: desactiva el mod en Fluffy.
-- El "Loose File Loader" de REFramework queda activado. Si no lo
-  necesitas, desactívalo en el menú de REFramework (tecla Insert).
-- REFramework no se quita solo. Si ya no lo usas, borra dinput8.dll de la
-  carpeta del juego.
+- Si instalaste REFramework a mano y ya no lo usas, borra dinput8.dll de
+  la carpeta del juego.
 
 
-6. SI EL JUEGO SE ACTUALIZA
+7. SI EL JUEGO SE ACTUALIZA
 ---------------------------
 Los archivos del parche se generan a partir de la versión del juego que
 tienes instalada. Después de una actualización de Steam, vuelve a ejecutar
-Instalar.bat: genera los archivos otra vez a partir de la versión nueva.
+el instalador: genera los archivos otra vez a partir de la versión nueva.
 Si usas Fluffy Mod Manager, ejecuta otra vez Crear_mod_Fluffy.bat y, en
 Fluffy, cambia el mod anterior por el .zip nuevo. Si el juego no abre
-después de una actualización, ejecuta Desinstalar.bat (o desactiva el mod
-en Fluffy) y espera una versión nueva del parche.
+después de una actualización, desinstala el parche y espera una versión
+nueva.
 
 
-7. PROBLEMAS CONOCIDOS
+8. PROBLEMAS CONOCIDOS
 ----------------------
 - Algunas etiquetas de los menús son más largas en español que en inglés.
   El juego las comprime a lo ancho para que quepan, así que algunas se ven
@@ -144,7 +187,7 @@ en Fluffy) y espera una versión nueva del parche.
   lo escribió.
 
 
-8. PREGUNTAS FRECUENTES
+9. PREGUNTAS FRECUENTES
 -----------------------
 ¿Modifica mis partidas guardadas?
   No. El parche no toca las partidas guardadas. Puedes seguir tus partidas
@@ -153,40 +196,41 @@ en Fluffy) y espera una versión nueva del parche.
 ¿Modifica los archivos del juego?
   No. Los archivos .pak del juego no se modifican. El parche agrega
   archivos en la carpeta natives\ del juego, guarda su lista y los
-  respaldos de otros mods en la carpeta sfes_es\ y, si lo aceptas, activa
-  el "Loose File Loader" en re2_fw_config.txt (la configuración de
-  REFramework).
+  respaldos de otros mods en la carpeta sfes_es\ y, si lo aceptas,
+  instala REFramework (dinput8.dll) y activa su "Loose File Loader" en
+  re2_fw_config.txt (la configuración de REFramework).
 
 ¿Por qué el paquete trae Python?
-  El instalador está hecho en Python y trae su propia copia en
+  El instalador está hecho en Python y en Windows trae su propia copia en
   programa\python, así que no tienes que instalar nada. No se instala en
   tu sistema ni cambia nada fuera de la carpeta del juego y de esta
-  carpeta.
+  carpeta. En Steam Deck usa el Python que el sistema ya trae.
 
 ¿Puedo compartir el parche?
   Comparte este .zip tal como está. No compartas la carpeta natives\ del
   juego ni el .zip de Fluffy: contienen archivos del juego.
 
-¿Algo salió mal?
-  El instalador guarda lo que hizo en registro.txt, en esta carpeta.
-  Inclúyelo si reportas un problema.
+¿Algo salió mal o encontraste un error de traducción?
+  Repórtalo en https://github.com/Diegocorp/starforce-es/issues
+  El instalador guarda lo que hizo en registro.txt, en esta carpeta:
+  inclúyelo si el problema es de la instalación.
 
 
-9. CRÉDITOS
------------
+10. CRÉDITOS
+------------
 Traducción, adaptación, herramientas e instalador: Diegocorp
 
 Herramientas de terceros:
 - REFramework: praydog y colaboradores, licencia MIT
   (https://github.com/praydog/REFramework). No viene incluido en este
-  paquete.
+  paquete: si lo aceptas, el instalador lo descarga de su página oficial.
 - Python: Python Software Foundation. Licencias en licencias\.
 - fontTools: sus autores, licencia MIT. Licencia en licencias\.
 
 Mega Man Star Force Legacy Collection © CAPCOM.
 
 
-10. AVISO LEGAL
+11. AVISO LEGAL
 ---------------
 Esta es una traducción no oficial hecha por fans, gratuita y sin fines de
 lucro. No está afiliada ni asociada a Capcom, y Capcom no la autorizó ni

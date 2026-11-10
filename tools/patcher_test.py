@@ -17,10 +17,15 @@ import tempfile
 from pathlib import Path
 
 dist, build = Path(sys.argv[1]), Path(sys.argv[2])
+sys.path.insert(0, str(dist / "programa" / "lib"))      # as instalador.py does (Linux has no ._pth file)
 sys.path.insert(0, str(dist / "programa"))
 from sfes import parche  # noqa: E402
 
-GAME = Path(r"C:\Program Files (x86)\Steam\steamapps\common\MegaMan StarForce LegacyCollection")
+import os  # noqa: E402
+
+GAME = Path(os.environ.get("SFES_TEST_GAME",
+                           r"C:\Program Files (x86)\Steam\steamapps\common\MegaMan StarForce LegacyCollection"))
+REF_ZIP = os.environ.get("SFES_TEST_REF_ZIP", r"C:\StarForceES\third_party\reframework\REFramework_nightly-01436.zip")
 results = []
 
 
@@ -38,9 +43,16 @@ data = parche.load_data(dist / "programa" / "datos" / "traduccion_es.json.gz")
 files, rep = parche.generate(GAME, data)
 built = {"natives/" + p.relative_to(build / "natives").as_posix(): p.read_bytes()
          for p in (build / "natives").rglob("*") if p.is_file()}
-same = sum(1 for k, v in built.items() if files.get(k) == v)
+by_lower = {k.lower(): v for k, v in files.items()}
+same = sum(1 for k, v in built.items() if by_lower.get(k) == v)
 check("generate reproduces the build byte for byte", same == len(built) == len(files),
       f"{same}/{len(built)} identical, {len(files)} generated")
+names_ok = all(k == f.get("name", f["path"]) for k, f in zip(
+    sorted(files), sorted(data["files"] + data["fonts"], key=lambda f: f.get("name", f["path"]))))
+check("files are named with the game's own path case",
+      names_ok and any("/STM/" in k for k in files) and all(k.lower() == k2 for k, k2 in
+                                                             zip(sorted(files, key=str.lower), sorted(built))),
+      sorted(files)[0])
 check("generate report", rep.entries == sum(len(f["entries"]) for f in data["files"]) and not rep.entries_stale
       and rep.font_as_tested is True and not rep.files_missing,
       f"entries {rep.entries}, stale {rep.entries_stale}, font as tested {rep.font_as_tested}")
@@ -103,17 +115,18 @@ try:
         def __init__(self, b):
             self.stdout = b
 
-    real_run = subprocess.run
-    try:
-        subprocess.run = lambda *a, **k: _Out("INFORMACIÓN: no hay tareas ejecutándose.".encode("cp850"))
-        not_running = parche.game_running() is False
-        subprocess.run = lambda *a, **k: _Out(b'"MEGAMAN_STARFORCE_Legacy_Collection.exe","1234","Console"')
-        running = parche.game_running() is True
-        subprocess.run = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
-        fail_open = parche.game_running() is False
-    finally:
-        subprocess.run = real_run
-    check("game_running: non-UTF-8 tasklist output, match, and failure", not_running and running and fail_open)
+    if parche.IS_WINDOWS:                         # tasklist is Windows only; Linux has its own /proc check below
+        real_run = subprocess.run
+        try:
+            subprocess.run = lambda *a, **k: _Out("INFORMACIÓN: no hay tareas ejecutándose.".encode("cp850"))
+            not_running = parche.game_running() is False
+            subprocess.run = lambda *a, **k: _Out(b'"MEGAMAN_STARFORCE_Legacy_Collection.exe","1234","Console"')
+            running = parche.game_running() is True
+            subprocess.run = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+            fail_open = parche.game_running() is False
+        finally:
+            subprocess.run = real_run
+        check("game_running: non-UTF-8 tasklist output, match, and failure", not_running and running and fail_open)
 
     shutil.rmtree(scratch / parche.STATE_DIR, ignore_errors=True)  # the tampered manifest of the last check
     parche.install(scratch, data, files, rep)
@@ -183,6 +196,83 @@ try:
     inst._write_log = False
     rc = inst.main(["instalar", str(scratch / "not_a_game"), "--si"])
     check("a folder that is not the game is refused with a message", rc == 2)
+
+    # --- v1.1: REFramework download, Linux helpers -----------------------------------------------------------
+    ref_url = Path(REF_ZIP).resolve().as_uri()
+    dll = parche.download_reframework(ref_url)
+    fake = scratch / "fakegame"
+    fake.mkdir()
+    parche.install_reframework(fake, dll)
+    parche.enable_loose_loader(fake, menu_closed=True)
+    cfg = (fake / parche.REF_CONFIG).read_text(encoding="utf-8")
+    try:
+        parche.install_reframework(fake, dll)
+        refused_existing = False
+    except parche.ParcheError:
+        refused_existing = True
+    removed = parche.remove_reframework(fake) == "removed" and parche.remove_reframework(fake) == "missing"
+    try:
+        parche.download_reframework((dist / "LEEME.txt").resolve().as_uri())
+        bad_refused = False
+    except parche.ParcheError:
+        bad_refused = True
+    check("REFramework: verified download, install, config, no overwrite, removal, bad file refused",
+          len(dll) > 1_000_000 and "LooseFileLoader_Enabled=true" in cfg and "RememberMenuState=true" in cfg
+          and "MenuOpen=false" in cfg and refused_existing and removed and not (fake / "dinput8.dll").exists()
+          and bad_refused)
+    shutil.rmtree(fake)
+
+    win = parche.IS_WINDOWS
+    proc = scratch / "proc"
+    (proc / "123").mkdir(parents=True)
+    (proc / "123" / "cmdline").write_bytes(b"Z:\\x\\MEGAMAN_STARFORCE_Legacy_Collection.exe\0-x\0")
+    (proc / "7").mkdir()
+    (proc / "7" / "cmdline").write_bytes(b"/usr/bin/steam\0")
+    try:
+        parche.IS_WINDOWS = False
+        linux_running = parche.game_running(proc) is True
+        (proc / "123" / "cmdline").write_bytes(b"/usr/bin/bash\0")
+        linux_not_running = parche.game_running(proc) is False
+    finally:
+        parche.IS_WINDOWS = win
+    check("game_running on Linux reads /proc", linux_running and linux_not_running)
+
+    vdf = ('"UserLocalConfigStore"\n{\n "Software"\n {\n  "Valve"\n  {\n   "Steam"\n   {\n    "apps"\n    {\n'
+           '     "3500390"\n     {\n      "LaunchOptions"\t\t"WINEDLLOVERRIDES=\\"dinput8=n,b\\" %command%"\n'
+           '     }\n    }\n   }\n  }\n }\n}\n')
+    tree = parche._vdf_tree(vdf)
+    lo = tree["userlocalconfigstore"]["software"]["valve"]["steam"]["apps"]["3500390"]["launchoptions"]
+    check("Steam launch option parsing", lo == parche.LAUNCH_OPTION and parche.launch_option_ok([lo]) is True
+          and parche.launch_option_ok([""]) is False and parche.launch_option_ok([]) is None
+          and parche.launch_option_ok(['WINEDLLOVERRIDES="winhttp,dinput8=n,b" %command% -x']) is True
+          and parche.launch_option_ok(['%command% WINEDLLOVERRIDES="dinput8=n,b"']) is False
+          and parche.launch_option_ok(['WINEDLLOVERRIDES="dinput8=n,b"']) is False
+          and parche.launch_option_ok([lo, ""]) is False, lo)
+
+    parche.install(scratch, data, files, rep, reframework_installed=True)
+    parche.install(scratch, data, files, rep)            # reinstall keeps the flag
+    parche.update_manifest(scratch, note="x")
+    m2 = parche.read_manifest(scratch)
+    flag = m2.get("reframework_installed")
+    parche.uninstall(scratch)
+    check("manifest remembers that the patch installed REFramework", flag is True and m2.get("note") == "x")
+
+    if not parche.IS_WINDOWS:                    # case-sensitive file system: reuse another mod's spelling
+        lin = scratch / "lincase"                 # a clean game folder holding only another mod's lower-case tree
+        key = sorted(files)[40]                  # e.g. natives/STM/Text/...
+        low = key.lower()
+        other = lin.joinpath(*low.split("/"))
+        other.parent.mkdir(parents=True)
+        other.write_bytes(b"lower-case mod")
+        ir = parche.install(lin, data, files, rep)
+        m3 = parche.read_manifest(lin)
+        paths = {f["path"] for f in m3["files"]}
+        upper_tree = (lin / "natives" / "STM").exists()
+        ur = parche.uninstall(lin)
+        check("Linux: an existing lower-case natives/stm tree is reused, its file backed up and restored",
+              low in paths and ir.backed_up == 1 and not upper_tree and other.read_bytes() == b"lower-case mod"
+              and ur.restored == 1, f"backed up {ir.backed_up}, upper tree created {upper_tree}")
+        shutil.rmtree(lin)
 
     out_zip = scratch / "fluffy.zip"
     parche.fluffy_zip(out_zip, data, files, "test")

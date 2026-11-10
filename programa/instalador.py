@@ -1,6 +1,7 @@
 r"""Instalador del parche en español de Mega Man Star Force Legacy Collection.
 
-Uso (lo llaman Instalar.bat, Desinstalar.bat y Crear_mod_Fluffy.bat):
+Uso (lo llaman Instalar.bat, Desinstalar.bat, Crear_mod_Fluffy.bat y, en Steam Deck / Linux,
+Instalar_SteamDeck.sh y Desinstalar_SteamDeck.sh):
   instalador.py instalar    [CARPETA_DEL_JUEGO] [--juego CARPETA] [--si]
   instalador.py desinstalar [CARPETA_DEL_JUEGO] [--juego CARPETA] [--si]
   instalador.py fluffy      [CARPETA_DEL_JUEGO] [--juego CARPETA] [--si] [--salida ARCHIVO.zip]
@@ -23,7 +24,15 @@ AUTHOR = 'Diegocorp'          # replaced by the packager with the credits name
 
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "lib"))
+if sys.version_info < (3, 11):
+    sys.exit(f"Este instalador necesita Python 3.11 o una versión más reciente (este sistema tiene "
+             f"{sys.version.split()[0]}).")
 from sfes import parche  # noqa: E402
+
+WIN = parche.IS_WINDOWS
+INSTALL = "Instalar.bat" if WIN else "Instalar_SteamDeck.sh"
+UNINSTALL = "Desinstalar.bat" if WIN else "Desinstalar_SteamDeck.sh"
+SEP = "\\" if WIN else "/"
 
 _log_lines: list[str] = []
 _write_log = True
@@ -130,25 +139,63 @@ def check_version(game: Path, data: dict, auto_yes: bool) -> None:
             raise Cancelado()
 
 
-def check_ref(game: Path, auto_yes: bool, can_enable: bool) -> bool:
-    """Revisa REFramework; devuelve True si se activó el Loose File Loader en re2_fw_config.txt."""
+MENU_KEY = "la tecla Insert" if WIN else "L3 + R3"
+
+
+def check_ref(game: Path, auto_yes: bool, can_enable: bool) -> tuple[bool, bool]:
+    """Revisa REFramework. Devuelve (se cambió re2_fw_config.txt, el jugador quiere que se descargue REFramework).
+    La descarga se hace después de instalar los archivos del parche, para que quede anotada en la lista de la
+    instalación y nunca quede REFramework instalado si la generación falla."""
     ref = parche.reframework_state(game)
     if not ref.dll:
-        say("AVISO: no encontré REFramework (dinput8.dll) en la carpeta del juego.")
-        say("Sin REFramework el juego no carga el parche. Lee LEEME.txt, sección 2 (Requisitos).")
+        say("No encontré REFramework (dinput8.dll) en la carpeta del juego. El juego lo necesita para cargar el parche.")
+        if can_enable and ask(f"¿Quieres que lo descargue e instale (versión probada {parche.REF_VERSION}, de "
+                              "github.com/praydog/REFramework-nightly)?", auto_yes):
+            return False, True
+        say("Sin REFramework el juego no carga el parche. Si prefieres instalarlo a mano, lee LEEME.txt, sección 2 "
+            "(Requisitos).")
         if can_enable and not ask("¿Quieres instalar los archivos del parche de todos modos?", auto_yes):
             raise Cancelado()
-        return False
+        return False, False
     if ref.loose_enabled is True:
-        return False
+        return False, False
     say("El 'Loose File Loader' de REFramework está desactivado; el parche lo necesita.")
     if ask("¿Quieres que lo active ahora (en re2_fw_config.txt)?", auto_yes):
-        parche.enable_loose_loader(game)
+        parche.enable_loose_loader(game, menu_closed=not WIN)
         say("  Activado.")
-        return True
-    say("  No se activó. Actívalo en el menú de REFramework (tecla Insert) > LooseFileLoader >")
+        return True, False
+    say(f"  No se activó. Actívalo en el menú de REFramework (se abre con {MENU_KEY}) > LooseFileLoader >")
     say("  \"Enable Loose File Loader\" y reinicia el juego.")
-    return False
+    return False, False
+
+
+def get_reframework(game: Path) -> bool:
+    say("Descargando REFramework...")
+    try:
+        parche.install_reframework(game, parche.download_reframework())
+    except parche.ParcheError as exc:
+        say(f"  {exc}")
+        say("  Los archivos del parche quedaron instalados; el juego los cargará cuando instales REFramework.")
+        return False
+    parche.enable_loose_loader(game, menu_closed=True)
+    parche.update_manifest(game, reframework_installed=True, reframework_config_changed=True)
+    say(f"  REFramework instalado y configurado (su menú se abre con {MENU_KEY}).")
+    return True
+
+
+def check_launch_option() -> None:
+    """Steam Deck / Linux: Proton solo carga REFramework con una opción de lanzamiento que hay que poner a mano."""
+    if WIN:
+        return
+    ok = parche.launch_option_ok(parche.launch_options())
+    if ok:
+        say("La opción de lanzamiento de Proton para REFramework ya está configurada en Steam.")
+        return
+    say("")
+    say("FALTA UN PASO (solo la primera vez): en Steam, haz clic derecho sobre el juego > Propiedades >")
+    say("General > Configuraciones de lanzamiento y escribe exactamente:")
+    say(f"    {parche.LAUNCH_OPTION}")
+    say("Sin esa línea, Proton no carga REFramework y el juego sigue en inglés.")
 
 
 def check_installed_build(game: Path, manifest: dict | None) -> None:
@@ -158,7 +205,7 @@ def check_installed_build(game: Path, manifest: dict | None) -> None:
     if built_for and current and built_for != current:
         say(f"AVISO: el parche instalado se generó para la build {built_for} y tu juego ahora tiene la build "
             f"{current} (Steam lo actualizó).")
-        say("Vuelve a ejecutar Instalar.bat para generar los archivos a partir de la versión nueva.")
+        say(f"Vuelve a ejecutar {INSTALL} para generar los archivos a partir de la versión nueva.")
 
 
 def generate(game: Path, data: dict) -> tuple[dict, parche.GenReport]:
@@ -187,7 +234,7 @@ def generate(game: Path, data: dict) -> tuple[dict, parche.GenReport]:
 def no_files(game: Path) -> parche.ParcheError:
     msg = "No se generó ningún archivo: tu versión del juego no es compatible con este parche."
     if parche.read_manifest(game) is not None:
-        msg += " Hay una instalación anterior del parche: ejecuta Desinstalar.bat."
+        msg += f" Hay una instalación anterior del parche: ejecuta {UNINSTALL}."
     return parche.ParcheError(msg)
 
 
@@ -198,7 +245,7 @@ def cmd_install(a) -> int:
     game = choose_game(a.juego, a.si)
     check_running()
     check_version(game, data, a.si)
-    ref_changed = check_ref(game, a.si, can_enable=True)
+    ref_changed, want_ref = check_ref(game, a.si, can_enable=True)
     try:
         old = parche.read_manifest(game)
     except parche.ParcheError:
@@ -214,6 +261,9 @@ def cmd_install(a) -> int:
     if rep.backed_up:
         say(f"Archivos sueltos de otros mods respaldados: {rep.backed_up} (en "
             f"{game / parche.STATE_DIR / parche.BACKUP_DIR}). Se restaurarán al desinstalar.")
+    if want_ref:
+        get_reframework(game)
+    check_launch_option()
     say("")
     say("Listo. El texto del juego tiene que estar en inglés: si los menús no aparecen en español, ve a")
     say("Settings > General Settings > Language > Text (Opciones > Opciones generales > Idioma > Texto)")
@@ -226,7 +276,7 @@ def cmd_uninstall(a) -> int:
     check_running()
     manifest = parche.read_manifest(game)
     if manifest is None:
-        say("El parche no está instalado en esta carpeta (no hay lista de instalación en sfes_es\\).")
+        say(f"El parche no está instalado en esta carpeta (no hay lista de instalación en sfes_es{SEP}).")
         return 0
     check_installed_build(game, manifest)
     if manifest.get("residual"):
@@ -240,15 +290,30 @@ def cmd_uninstall(a) -> int:
     say(f"Archivos del parche quitados: {rep.removed}. Archivos de otros mods restaurados: {rep.restored}.")
     if rep.kept_changed:
         say(f"{plural(len(rep.kept_changed), 'archivo cambió', 'archivos cambiaron')} desde la instalación (por "
-            "otro mod o un gestor de mods) y se dejaron como están; sus respaldos siguen en sfes_es\\respaldo:")
+            f"otro mod o un gestor de mods) y se dejaron como están; sus respaldos siguen en sfes_es{SEP}respaldo:")
         for p in rep.kept_changed[:20]:
             say(f"  {p}")
         if len(rep.kept_changed) > 20:
-            say(f"  ... y {len(rep.kept_changed) - 20} más (lista completa en sfes_es\\manifiesto.json).")
+            say(f"  ... y {len(rep.kept_changed) - 20} más (lista completa en sfes_es{SEP}manifiesto.json).")
     elif rep.leftover_backups:
         say(f"Quedan respaldos de otros mods en {game / parche.STATE_DIR / parche.BACKUP_DIR}: revísalos.")
     else:
         say("El juego vuelve a estar en inglés.")
+    if manifest.get("reframework_installed") and not rep.kept_changed:
+        if ask("El parche instaló REFramework. ¿Quieres quitarlo también (dinput8.dll)?", a.si):
+            status = parche.remove_reframework(game)
+            if status == "removed":
+                say(f"Se quitó REFramework. Su configuración (re2_fw_config.txt) y su carpeta reframework{SEP}, si "
+                    "existe, se quedan por si otros mods las usan.")
+                if not WIN:
+                    say(f"Ya puedes borrar la opción de lanzamiento {parche.LAUNCH_OPTION} en Steam (Propiedades > "
+                        "General > Configuraciones de lanzamiento).")
+            elif status == "missing":
+                say("dinput8.dll ya no está en la carpeta del juego; no había nada que quitar.")
+            else:
+                say("dinput8.dll cambió desde la instalación (quizás instalaste otra versión de REFramework), así que "
+                    "no se quitó.")
+            return 0
     if manifest.get("reframework_config_changed"):
         say("El 'Loose File Loader' de REFramework sigue activado (otros mods pueden usarlo).")
     say("REFramework no se desinstala: si ya no lo usas, borra dinput8.dll de la carpeta del juego.")
@@ -287,8 +352,11 @@ def cmd_check(a) -> int:
 
 class _Parser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
-        raise parche.ParcheError("No entendí la orden. Haz doble clic en el .bat (o arrastra solo la carpeta del "
-                                 "juego sobre él) y el instalador hará el resto.")
+        if WIN:
+            raise parche.ParcheError("No entendí la orden. Haz doble clic en el .bat (o arrastra solo la carpeta del "
+                                     "juego sobre él) y el instalador hará el resto.")
+        raise parche.ParcheError(f"No entendí la orden. Escribe solo bash {INSTALL} (o bash {UNINSTALL}) y el "
+                                 "instalador hará el resto.")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -310,10 +378,13 @@ def main(argv: list[str] | None = None) -> int:
         say(f"ERROR: {exc}")
         return 2
     except PermissionError as exc:
-        say(f"ERROR: Windows no permitió modificar un archivo ({exc}).")
-        say("Cierra el juego (y Steam, si hace falta) y vuelve a intentarlo. Si el archivo es de solo lectura, quita")
-        say("esa opción en sus propiedades; si sigue fallando, haz clic derecho en el .bat y elige 'Ejecutar como")
-        say("administrador'.")
+        say(f"ERROR: El sistema no permitió modificar un archivo ({exc}).")
+        if parche.IS_WINDOWS:
+            say("Cierra el juego (y Steam, si hace falta) y vuelve a intentarlo. Si el archivo es de solo lectura,")
+            say("quita esa opción en sus propiedades; si sigue fallando, haz clic derecho en el .bat y elige")
+            say("'Ejecutar como administrador'.")
+        else:
+            say("Cierra el juego y vuelve a intentarlo. Revisa que la carpeta del juego no sea de solo lectura.")
         return 3
     except Exception:
         say("ERROR inesperado. Los detalles están abajo y en registro.txt (en la carpeta del parche):")

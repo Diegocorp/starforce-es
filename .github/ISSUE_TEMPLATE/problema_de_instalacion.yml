@@ -1,0 +1,35 @@
+name: Problema de instalación
+description: El instalador falla, o el juego sigue en inglés después de instalar.
+title: "[Instalación] "
+labels: ["instalación"]
+body:
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: ¿Dónde lo instalas?
+      options:
+        - Windows (Instalar.bat)
+        - Windows (Fluffy Mod Manager)
+        - Steam Deck
+        - Otro Linux
+    validations:
+      required: true
+  - type: textarea
+    id: que_pasa
+    attributes:
+      label: ¿Qué pasa?
+      description: Qué hiciste, qué esperabas y qué pasó en cambio.
+    validations:
+      required: true
+  - type: textarea
+    id: registro
+    attributes:
+      label: Contenido de registro.txt
+      description: Está en la carpeta del parche. Pega aquí su contenido.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Versión del parche
+      description: Aparece al principio de LEEME.txt.
+      placeholder: "1.1"

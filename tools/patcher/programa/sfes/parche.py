@@ -7,9 +7,13 @@ inglés coincide con la del juego probado, añade los signos ¡ ¿ a la fuente R
 resultado como archivos sueltos en natives\ (los carga el Loose File Loader de REFramework).
 
 En la carpeta del juego solo se escribe:
-  natives\...            los archivos del parche (nunca un .pak ni otro archivo del juego)
+  natives\...            los archivos del parche (nunca un .pak ni otro archivo del juego), con las mayúsculas
+                         y minúsculas que pide el juego (necesario en Linux / Steam Deck)
   sfes_es\               manifiesto de la instalación y respaldo de archivos sueltos que ya existían
   re2_fw_config.txt      solo si el jugador acepta activar el Loose File Loader de REFramework
+  dinput8.dll            solo si el jugador acepta que el parche descargue REFramework (versión probada,
+                         verificada por su huella SHA-256)
+Funciona en Windows y en Linux (Steam Deck, con el juego en Proton).
 """
 from __future__ import annotations
 
@@ -17,6 +21,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -25,8 +30,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 
-from . import fontpatch, msg23
+from . import msg23
 from .pak import PakSet
+
+# fontpatch (and fontTools) is imported only by generate(), so uninstalling never needs fontTools.
 
 APPID = "3500390"
 GAME_EXE = "MEGAMAN_STARFORCE_Legacy_Collection.exe"
@@ -37,7 +44,17 @@ BACKUP_DIR = "respaldo"
 REF_DLL = "dinput8.dll"
 REF_CONFIG = "re2_fw_config.txt"
 LOOSE_KEY = "LooseFileLoader_Enabled"
+MENU_KEYS = {"REFrameworkConfig_RememberMenuState": "true", "REFrameworkConfig_MenuOpen": "false"}
 TMP_SUFFIX = ".sfes_tmp"
+
+# REFramework version the patch was tested with (MIT licence, github.com/praydog/REFramework)
+REF_VERSION = "nightly-01436"
+REF_URL = ("https://github.com/praydog/REFramework-nightly/releases/download/"
+           "nightly-01436-1813bf34f720cfed51c0e8f40fc90ed1459a3c6b/REFramework.zip")
+REF_ZIP_SHA256 = "9ef584db4a37715f0a677a5d304a5048b850389875b5dae0e204d4abbe9366f5"
+REF_DLL_SHA256 = "87a67022b995a6aa3410e22f8702daa5f9e17f97c9498cb011403c9a3defe1c1"
+LAUNCH_OPTION = 'WINEDLLOVERRIDES="dinput8=n,b" %command%'
+IS_WINDOWS = os.name == "nt"
 
 
 class ParcheError(Exception):
@@ -88,7 +105,12 @@ def _steam_roots() -> list[Path]:
                 pass
     except ImportError:
         pass
-    roots.append(Path(r"C:\Program Files (x86)\Steam"))
+    if IS_WINDOWS:
+        roots.append(Path(r"C:\Program Files (x86)\Steam"))
+    else:                                       # Steam Deck / Linux (native and Flatpak Steam)
+        home = Path.home()
+        roots += [home / ".local/share/Steam", home / ".steam/steam", home / ".steam/root",
+                  home / ".var/app/com.valvesoftware.Steam/.local/share/Steam"]
     return roots
 
 
@@ -125,14 +147,24 @@ def game_buildid(game_dir: Path) -> str | None:
     return ids[0] if ids else None
 
 
-def game_running() -> bool:
-    """True si el juego está abierto. La salida de tasklist llega en la página de códigos del sistema (no UTF-8
-    en Windows en español), así que se busca el nombre del .exe (ASCII) en los bytes, sin decodificar."""
+def game_running(proc_dir: Path = Path("/proc")) -> bool:
+    """True si el juego está abierto. En Windows, la salida de tasklist llega en la página de códigos del sistema
+    (no UTF-8 en Windows en español), así que se busca el nombre del .exe (ASCII) en los bytes, sin decodificar.
+    En Linux (Proton) se busca el nombre del .exe en la línea de órdenes de cada proceso."""
+    exe = GAME_EXE.lower().encode("ascii")
     try:
+        if not IS_WINDOWS:
+            for cmd in proc_dir.glob("[0-9]*/cmdline"):
+                try:
+                    if exe in cmd.read_bytes().lower():
+                        return True
+                except OSError:
+                    continue
+            return False
         out = subprocess.run(["tasklist", "/FI", f"IMAGENAME eq {GAME_EXE}", "/NH", "/FO", "CSV"],
                              capture_output=True, timeout=20,
                              creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        return GAME_EXE.lower().encode("ascii") in (out.stdout or b"").lower()
+        return exe in (out.stdout or b"").lower()
     except Exception:
         return False
 
@@ -155,19 +187,143 @@ def reframework_state(game_dir: Path) -> RefState:
     return RefState((game_dir / REF_DLL).is_file(), cfg.is_file(), enabled)
 
 
-def enable_loose_loader(game_dir: Path) -> None:
-    """Pone LooseFileLoader_Enabled=true en re2_fw_config.txt (lo crea si no existe)."""
+def enable_loose_loader(game_dir: Path, menu_closed: bool = False) -> None:
+    """Pone LooseFileLoader_Enabled=true en re2_fw_config.txt (lo crea si no existe). Con menu_closed, el menú de
+    REFramework queda cerrado al iniciar el juego (en el Steam Deck no hay tecla Insert; se abre con L3 + R3)."""
     cfg = game_dir / REF_CONFIG
     lines = cfg.read_text(encoding="utf-8", errors="replace").splitlines() if cfg.is_file() else []
-    done = False
+    want = {LOOSE_KEY: "true", **(MENU_KEYS if menu_closed else {})}
+    done = set()
     for i, line in enumerate(lines):
         k, sep, _ = line.partition("=")
-        if sep and k.strip() == LOOSE_KEY:
-            lines[i] = f"{LOOSE_KEY}=true"
-            done = True
-    if not done:
-        lines.append(f"{LOOSE_KEY}=true")
+        if sep and k.strip() in want:
+            lines[i] = f"{k.strip()}={want[k.strip()]}"
+            done.add(k.strip())
+    lines += [f"{k}={v}" for k, v in want.items() if k not in done]
     _atomic_write(cfg, ("\n".join(lines) + "\n").encode("utf-8"))
+
+
+def download_reframework(url: str = REF_URL, timeout: int = 120) -> bytes:
+    """dinput8.dll de la versión probada de REFramework, descargada y verificada por su huella SHA-256."""
+    import io
+    import urllib.request
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "sfes-instalador"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            blob = r.read()
+    except Exception as exc:
+        raise ParcheError(f"No se pudo descargar REFramework ({exc}). Revisa la conexión a internet o instálalo a "
+                          "mano (LEEME.txt, sección 2).") from exc
+    if sha256(blob) != REF_ZIP_SHA256:
+        raise ParcheError("El archivo de REFramework descargado no es el esperado (su huella no coincide); no se "
+                          "instaló. Instálalo a mano (LEEME.txt, sección 2).")
+    with zipfile.ZipFile(io.BytesIO(blob)) as z:
+        dll = z.read(REF_DLL)
+    if sha256(dll) != REF_DLL_SHA256:
+        raise ParcheError("dinput8.dll de REFramework no es el esperado; no se instaló.")
+    return dll
+
+
+def install_reframework(game_dir: Path, dll: bytes) -> None:
+    dest = game_dir / REF_DLL
+    if dest.exists():
+        raise ParcheError("Ya hay un dinput8.dll en la carpeta del juego; no se reemplazó.")
+    _atomic_write(dest, dll, sync=True)
+
+
+def remove_reframework(game_dir: Path) -> str:
+    """Quita dinput8.dll solo si es exactamente el que instaló el parche: "removed", "missing" o "changed"."""
+    dest = game_dir / REF_DLL
+    if not dest.is_file():
+        return "missing"
+    if sha256(dest.read_bytes()) != REF_DLL_SHA256:
+        return "changed"
+    _make_writable(dest)
+    dest.unlink()
+    return "removed"
+
+
+def update_manifest(game_dir: Path, **fields) -> None:
+    """Anota datos en la lista de la instalación (por ejemplo, que el parche instaló REFramework)."""
+    manifest = read_manifest(game_dir)
+    if manifest is not None:
+        manifest.update(fields)
+        _write_manifest(game_dir, manifest)
+
+
+def _vdf_tree(text: str) -> dict:
+    """Parser mínimo de VDF de Steam (claves y valores entre comillas, bloques con llaves)."""
+    tokens, i, n = [], 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == '"':
+            j, buf = i + 1, []
+            while j < n and text[j] != '"':
+                if text[j] == "\\" and j + 1 < n:
+                    buf.append(text[j + 1])
+                    j += 2
+                    continue
+                buf.append(text[j])
+                j += 1
+            tokens.append(("s", "".join(buf)))
+            i = j + 1
+        elif c in "{}":
+            tokens.append((c, c))
+            i += 1
+        elif text.startswith("//", i):
+            i = text.find("\n", i) if "\n" in text[i:] else n
+        else:
+            i += 1
+    root: dict = {}
+    stack, key = [root], None
+    for kind, val in tokens:
+        if kind == "s":
+            if key is None:
+                key = val
+            else:
+                stack[-1][key.lower()] = val
+                key = None
+        elif kind == "{":
+            child: dict = {}
+            stack[-1][(key or "").lower()] = child
+            stack.append(child)
+            key = None
+        elif kind == "}" and len(stack) > 1:
+            stack.pop()
+    return root
+
+
+def launch_options() -> list[str]:
+    """Opciones de lanzamiento del juego en cada cuenta de Steam de este equipo que tiene el juego (solo lectura;
+    cada archivo localconfig.vdf se lee una sola vez aunque se llegue a él por varias rutas)."""
+    found, seen = [], set()
+    for root in _steam_roots():
+        for cfg in (root / "userdata").glob("*/config/localconfig.vdf") if (root / "userdata").is_dir() else []:
+            try:
+                key = str(cfg.resolve())
+                if key in seen:
+                    continue
+                seen.add(key)
+                tree = _vdf_tree(cfg.read_text(encoding="utf-8", errors="replace"))
+            except OSError:
+                continue
+            node = tree
+            for k in ("userlocalconfigstore", "software", "valve", "steam", "apps", APPID):
+                node = node.get(k) if isinstance(node, dict) else None
+            if isinstance(node, dict):              # this account has the game
+                found.append(node.get("launchoptions", ""))
+    return found
+
+
+_LAUNCH_RE = re.compile(r'WINEDLLOVERRIDES\s*=\s*"?[^"%]*\bdinput8\s*=\s*n\s*,\s*b\b[^%]*%command%')
+
+
+def launch_option_ok(options: list[str]) -> bool | None:
+    """True si todas las cuentas que tienen el juego tienen la opción de Proton para REFramework (antes de
+    %command%, que es donde tiene efecto); None si no se encontró ninguna cuenta con el juego."""
+    if not options:
+        return None
+    return all(_LAUNCH_RE.search(o) for o in options)
 
 
 # ---------------------------------------------------------------------------------------------- generar
@@ -185,7 +341,9 @@ class GenReport:
 
 
 def generate(game_dir: Path, data: dict, progress=None) -> tuple[dict[str, bytes], GenReport]:
-    """Archivos del parche (ruta del pak -> bytes) generados a partir de los .pak del juego."""
+    """Archivos del parche generados a partir de los .pak del juego: ruta con las mayúsculas que pide el juego
+    (campo "name" de los datos; si falta, la ruta del pak) -> bytes."""
+    from . import fontpatch
     ps = PakSet(game_dir)
     rep = GenReport()
     out: dict[str, bytes] = {}
@@ -214,7 +372,7 @@ def generate(game_dir: Path, data: dict, progress=None) -> tuple[dict[str, bytes
         rep.entries += applied
         if applied:
             raw = msg23.build(msg)
-            out[path] = raw
+            out[f.get("name", path)] = raw
             rep.files += 1
             rep.files_as_tested += sha256(raw) == f["out_sha256"]
     for font in data["fonts"]:
@@ -223,7 +381,7 @@ def generate(game_dir: Path, data: dict, progress=None) -> tuple[dict[str, bytes
         except Exception as exc:  # the dialogue keeps working without ¡ ¿; report it
             rep.font_error = f"{type(exc).__name__}: {exc}"
             continue
-        out[font["path"]] = raw
+        out[font.get("name", font["path"])] = raw
         rep.files += 1
         rep.font_as_tested = sha256(raw) == font["out_sha256"]
     return out, rep
@@ -311,6 +469,36 @@ def _free_backup(state: Path, p: PurePosixPath) -> PurePosixPath:
     return cand
 
 
+class _CaseResolver:
+    """En sistemas de archivos que distinguen mayúsculas (Linux / Steam Deck) reutiliza la grafía de las carpetas y
+    archivos que ya existen con otras mayúsculas (por ejemplo, natives/stm de otro mod): el juego, en Proton, los
+    encuentra igual, así no se crean árboles paralelos (stm junto a STM) y un archivo de otro mod con otra grafía
+    se reconoce y se respalda. En Windows no hace nada."""
+
+    def __init__(self, game_dir: Path):
+        self.game_dir = game_dir
+        self.listings: dict[Path, dict[str, str]] = {}
+
+    def _listing(self, folder: Path) -> dict[str, str]:
+        if folder not in self.listings:
+            try:
+                self.listings[folder] = {c.name.casefold(): c.name for c in folder.iterdir()}
+            except OSError:
+                self.listings[folder] = {}
+        return self.listings[folder]
+
+    def __call__(self, p: PurePosixPath) -> PurePosixPath:
+        if IS_WINDOWS:
+            return p
+        cur, parts = self.game_dir, []
+        for part in p.parts:
+            if cur.is_dir() and not (cur / part).exists():
+                part = self._listing(cur).get(part.casefold(), part)
+            parts.append(part)
+            cur = cur / part
+        return PurePosixPath(*parts)
+
+
 @dataclass
 class InstallReport:
     written: int = 0
@@ -319,7 +507,7 @@ class InstallReport:
 
 
 def install(game_dir: Path, data: dict, files: dict[str, bytes], gen: GenReport,
-            ref_config_changed: bool = False) -> InstallReport:
+            ref_config_changed: bool = False, reframework_installed: bool = False) -> InstallReport:
     """Escribe los archivos generados en natives\\ con manifiesto y respaldo. Una instalación anterior se
     desinstala antes. Los archivos que ya son del parche (mismo contenido que esta versión o que la versión
     probada) se reconocen y no se respaldan. Si se interrumpe, el manifiesto (marcado incompleto) permite
@@ -329,14 +517,17 @@ def install(game_dir: Path, data: dict, files: dict[str, bytes], gen: GenReport,
     except ParcheError:
         old = None                      # damaged: our files are recognised by content below
     if old is not None:
+        reframework_installed = reframework_installed or bool(old.get("reframework_installed"))
+        ref_config_changed = ref_config_changed or bool(old.get("reframework_config_changed"))
         uninstall(game_dir)
     state = game_dir / STATE_DIR
-    tested = {f["path"]: f["out_sha256"] for f in data["files"]}
-    tested.update({f["path"]: f["out_sha256"] for f in data["fonts"]})
+    tested = {f.get("name", f["path"]): f["out_sha256"] for f in data["files"]}
+    tested.update({f.get("name", f["path"]): f["out_sha256"] for f in data["fonts"]})
     plan = []
     created: set[str] = set()
+    resolve = _CaseResolver(game_dir)
     for rel in sorted(files):
-        p = _safe_rel(rel)
+        p = resolve(_safe_rel(rel))
         dest = game_dir.joinpath(*p.parts)
         backup = None
         if dest.exists():
@@ -348,24 +539,25 @@ def install(game_dir: Path, data: dict, files: dict[str, bytes], gen: GenReport,
         while parent.parts and not game_dir.joinpath(*parent.parts).exists():
             created.add(str(parent))
             parent = parent.parent
-        plan.append((p, dest, backup))
+        plan.append((rel, p, dest, backup))
     manifest = {"schema": 1, "patch": data["name"], "version": data["version"],
                 "installed": datetime.now().isoformat(timespec="seconds"), "game_build": game_buildid(game_dir),
                 "complete": False, "reframework_config_changed": ref_config_changed,
-                "files": [{"path": str(p), "sha256": sha256(files[str(p)]), "backup": str(b) if b else None}
-                          for p, _, b in plan],
+                "reframework_installed": reframework_installed, "platform": "windows" if IS_WINDOWS else "linux",
+                "files": [{"path": str(p), "sha256": sha256(files[rel]), "backup": str(b) if b else None}
+                          for rel, p, _, b in plan],
                 "dirs": sorted(created, key=lambda d: (-d.count("/"), d))}
     rep = InstallReport(gen=gen)
-    for p, dest, backup in plan:          # backups first, then the manifest, then the files
+    for _, p, dest, backup in plan:       # backups first, then the manifest, then the files
         if backup is not None:
             bk = state.joinpath(BACKUP_DIR, *backup.parts)
             bk.parent.mkdir(parents=True, exist_ok=True)
             _atomic_write(bk, dest.read_bytes(), sync=True)
             rep.backed_up += 1
     _write_manifest(game_dir, manifest)
-    for p, dest, _ in plan:
+    for rel, p, dest, _ in plan:
         dest.parent.mkdir(parents=True, exist_ok=True)
-        _atomic_write(dest, files[str(p)])
+        _atomic_write(dest, files[rel])
         rep.written += 1
     manifest["complete"] = True
     _write_manifest(game_dir, manifest)

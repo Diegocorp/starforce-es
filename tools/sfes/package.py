@@ -2,6 +2,7 @@ r"""Assemble the distributable patch folder and zip (Phase 5).
 
 dist/<NAME>/
   Instalar.bat, Desinstalar.bat, Crear_mod_Fluffy.bat, LEEME.txt     (tools/patcher)
+  Instalar_SteamDeck.sh, Desinstalar_SteamDeck.sh                    (tools/patcher; LF, executable in the zip)
   programa/instalador.py, programa/sfes/{__init__,config,parche}.py   (tools/patcher/programa)
   programa/sfes/{pak,msg23,oft,fslt,fontpatch}.py                    (unchanged copies of the toolkit modules)
   programa/datos/traduccion_es.json.gz                               (patchdata output: our Spanish only)
@@ -14,7 +15,7 @@ Nothing from the game is copied: the patcher builds the game files on the player
 package if it finds a game file type (.pak, .msg.23, .oft*, .tex*, .user*) or a file larger than the data file
 outside python/ and lib/.
 
-CLI: run.py package --name MMSFLC_Espanol_v1.0 --author "NOMBRE" [--data FILE]
+CLI: run.py package --name MMSFLC_Espanol_v1.1 --author "NOMBRE" [--data FILE] [--no-zip] [--repo]
 """
 from __future__ import annotations
 
@@ -119,7 +120,8 @@ def check(folder: Path, data_name: str) -> list[str]:
     return problems
 
 
-REPO_ITEMS = ("Instalar.bat", "Desinstalar.bat", "Crear_mod_Fluffy.bat", "LEEME.txt", "programa", "licencias")
+REPO_ITEMS = ("Instalar.bat", "Desinstalar.bat", "Crear_mod_Fluffy.bat", "Instalar_SteamDeck.sh",
+              "Desinstalar_SteamDeck.sh", "LEEME.txt", "programa", "licencias")
 
 
 def sync_repo(folder: Path) -> None:
@@ -145,7 +147,11 @@ def make_zip(folder: Path) -> Path:
     with zipfile.ZipFile(z, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         for p in sorted(folder.rglob("*")):
             if p.is_file():
-                zf.write(p, Path(folder.name) / p.relative_to(folder))
+                info = zipfile.ZipInfo.from_file(p, (Path(folder.name) / p.relative_to(folder)).as_posix())
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.create_system = 3                              # Unix attributes, so Linux keeps +x
+                info.external_attr = ((0o100755 if p.suffix == ".sh" else 0o100644) << 16)
+                zf.writestr(info, p.read_bytes(), compresslevel=9)
     return z
 
 

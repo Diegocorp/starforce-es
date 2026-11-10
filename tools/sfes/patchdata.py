@@ -50,8 +50,19 @@ def game_buildid(game_dir: Path) -> str | None:
     return None
 
 
+TRUE_CASE = Path(__file__).resolve().parent / "data" / "true_case_paths.json"
+
+
+def true_case_names() -> dict[str, str]:
+    """pak path (lower case) -> the path as the game requests it (needed on case-sensitive file systems)."""
+    if not TRUE_CASE.is_file():
+        return {}
+    return json.loads(TRUE_CASE.read_text(encoding="utf-8"))["paths"]
+
+
 def export(build_name: str, version: str, ps: PakSet | None = None) -> dict:
     ps = ps or PakSet()
+    names = true_case_names()
     root = config.BUILD / build_name
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     variant = manifest["options"].get("fonts")
@@ -62,8 +73,11 @@ def export(build_name: str, version: str, ps: PakSet | None = None) -> dict:
         rel = "natives/" + path.relative_to(natives).as_posix()
         built = path.read_bytes()
         source = ps.read(rel)
+        if rel not in names:
+            print(f"  note: no true-case name for {rel}; it will be written in lower case")
         if rel in font_paths:
-            fonts.append({"path": rel, "variant": variant, "src_sha256": sha256(source), "out_sha256": sha256(built)})
+            fonts.append({"path": rel, "name": names.get(rel, rel), "variant": variant,
+                          "src_sha256": sha256(source), "out_sha256": sha256(built)})
             continue
         if not rel.endswith(".msg.23"):
             raise ValueError(f"unexpected output file {rel}")
@@ -78,7 +92,8 @@ def export(build_name: str, version: str, ps: PakSet | None = None) -> dict:
                     raise ValueError(f"{rel}: slot {k} changed in {ea.name}")
             if ea.texts[slot] != eb.texts[slot]:
                 entries.append([ea.guid, en_fingerprint(ea.texts[slot]), eb.texts[slot]])
-        files.append({"path": rel, "src_sha256": sha256(source), "out_sha256": sha256(built), "entries": entries})
+        files.append({"path": rel, "name": names.get(rel, rel), "src_sha256": sha256(source),
+                      "out_sha256": sha256(built), "entries": entries})
     return {"schema": 1, "name": "Mega Man Star Force Legacy Collection: traducción al español", "version": version,
             "game": {"appid": APPID, "buildid": game_buildid(ps.game_dir)}, "lang_slot": config.LANG_EN,
             "files": files, "fonts": fonts}

@@ -1,0 +1,41 @@
+name: Error de traducción
+description: Una línea mal traducida, con errores de ortografía, cortada o que se sale del cuadro.
+title: "[Traducción] "
+labels: ["traducción"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. Con estos datos podemos encontrar la línea más rápido.
+  - type: textarea
+    id: texto
+    attributes:
+      label: Texto en el juego
+      description: Escribe el texto en español tal como aparece (o lo más parecido posible).
+    validations:
+      required: true
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué está mal?
+      description: Error de significado, error de ortografía, texto cortado o fuera del cuadro, tono del personaje, etc.
+    validations:
+      required: true
+  - type: input
+    id: donde
+    attributes:
+      label: ¿Dónde aparece?
+      description: Versión del juego (Pegasus, Leo o Dragon) o menús de la colección; lugar o escena; personaje que habla.
+    validations:
+      required: true
+  - type: textarea
+    id: captura
+    attributes:
+      label: Captura de pantalla
+      description: Si puedes, arrastra aquí una captura.
+  - type: input
+    id: version
+    attributes:
+      label: Versión del parche
+      description: Aparece al principio de LEEME.txt.
+      placeholder: "1.1"

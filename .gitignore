@@ -3,6 +3,7 @@
 /*
 !/.gitignore
 !/.gitattributes
+!/.github/
 !/README.md
 !/tools/
 
@@ -10,6 +11,8 @@
 !/Instalar.bat
 !/Desinstalar.bat
 !/Crear_mod_Fluffy.bat
+!/Instalar_SteamDeck.sh
+!/Desinstalar_SteamDeck.sh
 !/LEEME.txt
 !/programa/
 !/licencias/
