@@ -74,11 +74,27 @@ def assemble(name: str, author: str, data: Path) -> Path:
     _copy(PY_NOTICES, lic / "Python_software_incorporado.txt")
     ft = VENV_SITE / "fontTools"
     shutil.copytree(ft, out / "programa" / "lib" / "fontTools", ignore=shutil.ignore_patterns("__pycache__"))
+    _scrub_comments(out / "programa" / "lib")
     dist_info = next(VENV_SITE.glob("fonttools-*.dist-info"))
     for lf in dist_info.rglob("LICENSE*"):
         if lf.is_file():
             _copy(lf, lic / f"fontTools_{lf.name}.txt")
     return out
+
+
+def _scrub_comments(lib: Path) -> None:
+    """Drop comment lines of bundled third-party code that contain a listed word (comments only; code unchanged)."""
+    if not BANNED_WORDS:
+        return
+    for py in lib.rglob("*.py"):
+        text = py.read_text(encoding="utf-8")
+        low = text.lower()
+        if not any(w in low for w in BANNED_WORDS):
+            continue
+        lines = text.split("\n")
+        kept = [ln for ln in lines
+                if not (ln.lstrip().startswith("#") and any(w in ln.lower() for w in BANNED_WORDS))]
+        py.write_text("\n".join(kept), encoding="utf-8", newline="")
 
 
 def check(folder: Path, data_name: str) -> list[str]:
@@ -94,12 +110,32 @@ def check(folder: Path, data_name: str) -> list[str]:
         inside_runtime = rel.startswith(("programa/python/", "programa/lib/"))
         if not inside_runtime and p.name != data_name and p.stat().st_size > 2_000_000:
             problems.append(f"unexpected large file: {rel}")
-        if p.suffix in (".py", ".txt", ".bat", ".md") and not inside_runtime and BANNED_WORDS:
+        if p.suffix in (".py", ".txt", ".bat", ".md") and BANNED_WORDS and (
+                not inside_runtime or p.suffix == ".py"):
             low = p.read_text(encoding="utf-8", errors="replace").lower()
             for word in BANNED_WORDS:
                 if word in low:
                     problems.append(f"{rel}: mentions '{word}'")
     return problems
+
+
+REPO_ITEMS = ("Instalar.bat", "Desinstalar.bat", "Crear_mod_Fluffy.bat", "LEEME.txt", "programa", "licencias")
+
+
+def sync_repo(folder: Path) -> None:
+    """Copy the finished package to the repository root, so that downloading the repository gives the
+    ready-to-use patch. Only the package's own items are replaced."""
+    for item in REPO_ITEMS:
+        dst = config.ROOT / item
+        if dst.is_dir():
+            shutil.rmtree(dst)
+        elif dst.exists():
+            dst.unlink()
+        src = folder / item
+        if src.is_dir():
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy2(src, dst)
 
 
 def make_zip(folder: Path) -> Path:
@@ -119,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--author", required=True)
     ap.add_argument("--data", type=Path, default=config.DIST / "data" / "traduccion_es.json.gz")
     ap.add_argument("--no-zip", action="store_true")
+    ap.add_argument("--repo", action="store_true", help="also copy the package to the repository root")
     a = ap.parse_args(argv)
     folder = assemble(a.name, a.author, a.data)
     problems = check(folder, a.data.name)
@@ -131,4 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     if not a.no_zip:
         z = make_zip(folder)
         print(f"zip {z}: {z.stat().st_size} bytes, sha256 {hashlib.sha256(z.read_bytes()).hexdigest()}")
+    if a.repo:
+        sync_repo(folder)
+        print(f"package copied to the repository root {config.ROOT}")
     return 0

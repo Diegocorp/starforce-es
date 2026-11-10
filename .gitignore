@@ -2,8 +2,17 @@
 # reference material, builds, packages and backups never go to the repository.
 /*
 !/.gitignore
+!/.gitattributes
 !/README.md
 !/tools/
+
+# The ready-to-use patch (built by `tools/run.py package ... --repo`)
+!/Instalar.bat
+!/Desinstalar.bat
+!/Crear_mod_Fluffy.bat
+!/LEEME.txt
+!/programa/
+!/licencias/
 
 # research scripts (local only)
 /tools/investigate/

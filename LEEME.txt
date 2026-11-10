@@ -1,0 +1,200 @@
+﻿MEGA MAN STAR FORCE LEGACY COLLECTION
+Traducción al español de Mega Man Star Force y de los menús de la colección
+Versión 1.0 (noviembre de 2026)
+Traducción: Diegocorp
+
+======================================================================
+ ÍNDICE
+  1. Qué incluye
+  2. Requisitos
+  3. Instalación
+  4. Elegir el idioma en el juego
+  5. Desinstalación
+  6. Si el juego se actualiza
+  7. Problemas conocidos
+  8. Preguntas frecuentes
+  9. Créditos
+ 10. Aviso legal
+======================================================================
+
+
+1. QUÉ INCLUYE
+--------------
+- Mega Man Star Force (el primer juego) completo en español latinoamericano
+  neutro: historia, diálogos, pistas, menús, cartas, objetos, correos,
+  páginas personales, tutoriales y trivia.
+- Los menús de la colección: menú principal, opciones, galería, música,
+  créditos y juego en red.
+- Los signos ¡ y ¿, que la fuente del juego no tenía.
+
+Todavía no incluye:
+- Mega Man Star Force 2 y 3, que siguen en inglés. En la galería, las cartas
+  propias de esos dos juegos también siguen en inglés.
+- El texto dibujado dentro de imágenes (algunos títulos y logotipos).
+
+
+2. REQUISITOS
+-------------
+- Una copia legal de Mega Man Star Force Legacy Collection de Steam, en
+  Windows 10 u 11 de 64 bits.
+- Versión compatible: la de Steam del 31/10/2026 (build 23297979). Con otra
+  versión el parche también se instala, pero las líneas que el juego haya
+  cambiado se quedan en inglés (lee la sección 6).
+- REFramework, un programa gratuito y de código abierto que permite que el
+  juego cargue archivos modificados. El parche se probó con la versión
+  nightly-01436. Para instalarlo:
+    1. Descarga REFramework.zip de
+       https://github.com/praydog/REFramework-nightly/releases
+    2. Copia el archivo dinput8.dll que viene dentro del .zip a la carpeta
+       del juego (la carpeta donde está
+       MEGAMAN_STARFORCE_Legacy_Collection.exe).
+    3. Abre el juego una vez y ciérralo.
+  REFramework necesita tener activada su opción "Loose File Loader". Si usas
+  Instalar.bat, el instalador la activa si hace falta (te lo pregunta
+  antes).
+- Unos 100 MB libres en el disco donde está el juego.
+
+
+3. INSTALACIÓN
+--------------
+Opción A (recomendada): el instalador incluido
+
+  1. Descomprime este .zip en cualquier carpeta (por ejemplo, en el
+     Escritorio). No ejecutes Instalar.bat desde dentro del .zip. Si
+     Windows muestra una advertencia de seguridad, elige "Ejecutar" (o
+     "Más información" > "Ejecutar de todas formas").
+  2. Cierra el juego.
+  3. Haz doble clic en Instalar.bat.
+  4. El instalador busca el juego en tus bibliotecas de Steam, revisa
+     REFramework, genera los archivos en español a partir de TU copia del
+     juego y los copia en la carpeta natives\ del juego. Tarda menos de un
+     minuto. Cuando te pregunte algo, escribe S (sí) o N (no) y presiona
+     Enter.
+  5. Al terminar, sigue con la sección 4.
+
+  Si el instalador no encuentra el juego, te pedirá la ruta de su carpeta.
+  Para verla: en Steam, haz clic derecho sobre el juego > Administrar >
+  Explorar archivos locales (con Steam en inglés: Manage > Browse local
+  files) y copia la ruta de la barra de direcciones de la ventana que se
+  abre. También puedes arrastrar la carpeta del juego sobre Instalar.bat.
+
+Opción B: Fluffy Mod Manager
+
+  1. Descomprime este .zip y haz doble clic en Crear_mod_Fluffy.bat.
+  2. Se crea el archivo MMSFLC_Espanol_v1.0_Fluffy.zip en esta misma
+     carpeta.
+  3. En Fluffy Mod Manager, elige el juego, arrastra ese .zip a la ventana
+     y activa el mod.
+  4. El juego carga el mod solo con REFramework y su "Loose File Loader"
+     activado. Crear_mod_Fluffy.bat no lo activa: abre el juego, presiona
+     Insert, entra en LooseFileLoader, marca "Enable Loose File Loader" y
+     reinicia el juego.
+
+  Ese .zip contiene archivos generados a partir de tu copia del juego: es
+  solo para tu uso, no lo compartas.
+
+
+4. ELEGIR EL IDIOMA EN EL JUEGO
+-------------------------------
+El parche reemplaza el texto en inglés, así que el texto del juego tiene
+que estar en inglés. Si al abrir el juego los menús no aparecen en
+español, ve a Settings > General Settings > Language > Text (con el
+parche, esa ruta se ve como Opciones > Opciones generales > Idioma >
+Texto) y elige "English". El idioma de las voces no cambia nada.
+
+Si ya está en "English" y el texto sigue en inglés, revisa que dinput8.dll
+esté en la carpeta del juego y que el "Loose File Loader" de REFramework
+esté activado (sección 2).
+
+
+5. DESINSTALACIÓN
+-----------------
+- Si usaste Instalar.bat: haz doble clic en Desinstalar.bat. Quita los
+  archivos del parche que no hayan cambiado desde la instalación y vuelve
+  a poner los archivos de otros mods que el parche hubiera reemplazado. Si
+  otro mod cambió alguno de esos archivos, lo deja como está y te dice
+  cuál es.
+- Si usaste Fluffy Mod Manager: desactiva el mod en Fluffy.
+- El "Loose File Loader" de REFramework queda activado. Si no lo
+  necesitas, desactívalo en el menú de REFramework (tecla Insert).
+- REFramework no se quita solo. Si ya no lo usas, borra dinput8.dll de la
+  carpeta del juego.
+
+
+6. SI EL JUEGO SE ACTUALIZA
+---------------------------
+Los archivos del parche se generan a partir de la versión del juego que
+tienes instalada. Después de una actualización de Steam, vuelve a ejecutar
+Instalar.bat: genera los archivos otra vez a partir de la versión nueva.
+Si usas Fluffy Mod Manager, ejecuta otra vez Crear_mod_Fluffy.bat y, en
+Fluffy, cambia el mod anterior por el .zip nuevo. Si el juego no abre
+después de una actualización, ejecuta Desinstalar.bat (o desactiva el mod
+en Fluffy) y espera una versión nueva del parche.
+
+
+7. PROBLEMAS CONOCIDOS
+----------------------
+- Algunas etiquetas de los menús son más largas en español que en inglés.
+  El juego las comprime a lo ancho para que quepan, así que algunas se ven
+  un poco más estrechas.
+- Algunos nombres se mantienen en inglés a propósito, como en la versión
+  occidental oficial: los FM-ianos y sus formas (Harp Note, Taurus Fire...),
+  los Navis de las cartas y algunos lugares.
+- En el juego en red, el texto que escribe el otro jugador se ve tal como
+  lo escribió.
+
+
+8. PREGUNTAS FRECUENTES
+-----------------------
+¿Modifica mis partidas guardadas?
+  No. El parche no toca las partidas guardadas. Puedes seguir tus partidas
+  con el parche o sin él.
+
+¿Modifica los archivos del juego?
+  No. Los archivos .pak del juego no se modifican. El parche agrega
+  archivos en la carpeta natives\ del juego, guarda su lista y los
+  respaldos de otros mods en la carpeta sfes_es\ y, si lo aceptas, activa
+  el "Loose File Loader" en re2_fw_config.txt (la configuración de
+  REFramework).
+
+¿Por qué el paquete trae Python?
+  El instalador está hecho en Python y trae su propia copia en
+  programa\python, así que no tienes que instalar nada. No se instala en
+  tu sistema ni cambia nada fuera de la carpeta del juego y de esta
+  carpeta.
+
+¿Puedo compartir el parche?
+  Comparte este .zip tal como está. No compartas la carpeta natives\ del
+  juego ni el .zip de Fluffy: contienen archivos del juego.
+
+¿Algo salió mal?
+  El instalador guarda lo que hizo en registro.txt, en esta carpeta.
+  Inclúyelo si reportas un problema.
+
+
+9. CRÉDITOS
+-----------
+Traducción, adaptación, herramientas e instalador: Diegocorp
+
+Herramientas de terceros:
+- REFramework: praydog y colaboradores, licencia MIT
+  (https://github.com/praydog/REFramework). No viene incluido en este
+  paquete.
+- Python: Python Software Foundation. Licencias en licencias\.
+- fontTools: sus autores, licencia MIT. Licencia en licencias\.
+
+Mega Man Star Force Legacy Collection © CAPCOM.
+
+
+10. AVISO LEGAL
+---------------
+Esta es una traducción no oficial hecha por fans, gratuita y sin fines de
+lucro. No está afiliada ni asociada a Capcom, y Capcom no la autorizó ni
+la respalda. Mega Man, Mega Man Star Force y todos los nombres, personajes
+y marcas relacionados pertenecen a CAPCOM CO., LTD.
+
+Para usar el parche necesitas una copia legal del juego. Este paquete no
+contiene archivos del juego: el instalador los genera en tu PC a partir
+de tu propia copia.
+
+Prohibida su venta. Usa el parche bajo tu propia responsabilidad.

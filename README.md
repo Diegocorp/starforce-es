@@ -1,42 +1,55 @@
-# starforce-es
+# Mega Man Star Force Legacy Collection en español
 
-Free fan translation of **Mega Man Star Force Legacy Collection** (Steam) into neutral Latin American Spanish:
-Mega Man Star Force 1 and the collection's menus. Unofficial; not affiliated with Capcom.
+Traducción al español latinoamericano de **Mega Man Star Force** (el primer juego) y de los menús de la
+colección, para la versión de Steam en Windows. Gratuita, hecha por fans y no oficial.
 
-This repository holds the code only. Game data, game text and translation work files stay on the
-translator's PC and are never committed (see `.gitignore`: everything is ignored unless listed).
+## Descarga
 
-## Contents
+Descarga **MMSFLC_Espanol_v1.0.zip** de la sección
+[Releases](https://github.com/Diegocorp/starforce-es/releases/latest), o el botón verde **Code > Download ZIP**
+de esta página: los dos traen lo mismo.
 
-| Path | What it is |
-|---|---|
-| `tools/run.py` | launcher: `python -I -X utf8 tools/run.py <module> [args]` |
-| `tools/sfes/` | toolkit: pak reading (`pak`), msg.23 files (`msg23`), extraction, CSV import/export, validation, line wrapping by pixel width, font patch for ¡ ¿, build, batch translation helpers, patch data export (`patchdata`), packaging (`package`) |
-| `tools/sfes/tests/` | toolkit tests (they read the local work files and the installed game) |
-| `tools/patcher/` | sources of the player-facing package: `Instalar.bat`, `Desinstalar.bat`, `Crear_mod_Fluffy.bat`, `LEEME.txt` (Spanish README) and the patcher in `programa/` |
-| `tools/patcher_test.py` | end-to-end test of the package, run with the package's own embedded Python |
+## Instalación
 
-## How the patch works
+1. Instala **REFramework**: descarga `REFramework.zip` de
+   [REFramework-nightly](https://github.com/praydog/REFramework-nightly/releases) y copia el archivo `dinput8.dll`
+   en la carpeta del juego. Abre el juego una vez y ciérralo.
+2. Descomprime el .zip del parche en cualquier carpeta.
+3. Haz doble clic en **Instalar.bat**.
 
-The release package ships no game files. Its data file holds, for each translated entry, the entry guid, a
-fingerprint of the English text and the Spanish text. The installer reads the player's own `.pak` files,
-applies the Spanish where the fingerprint matches, adds ¡ and ¿ to the player's own `RR_System_Font`, and writes
-loose files under `<game>/natives/` for REFramework's Loose File Loader (the game rejects modified paks). It keeps
-a manifest and backups in `<game>/sfes_es/` so uninstalling removes exactly what it wrote.
+Listo: el instalador busca el juego en Steam, genera los archivos en español a partir de tu copia del juego y los
+instala. Si el juego no aparece en español, ve a Settings > General Settings > Language > Text y elige "English".
 
-## Release flow (on the translator's PC)
+Para quitar el parche, haz doble clic en **Desinstalar.bat**. También funciona con Fluffy Mod Manager
+(`Crear_mod_Fluffy.bat`). Todos los detalles están en [LEEME.txt](LEEME.txt).
 
-```
-python -I -X utf8 tools/run.py validate --scope phase1 --fonts rrsystem --glossary work/glossary.json
-python -I -X utf8 tools/run.py build --scope phase1 --name release_v1 --fonts rrsystem
-python -I -X utf8 tools/run.py patchdata --build release_v1 --version 1.0
-python -I -X utf8 tools/run.py package --name MMSFLC_Espanol_v1.0 --author Diegocorp
-dist/MMSFLC_Espanol_v1.0/programa/python/python.exe -I -B -X utf8 tools/patcher_test.py dist/MMSFLC_Espanol_v1.0 build/release_v1
-```
+## Qué incluye
 
-Requirements: Windows, Python 3.14 with fontTools, the game installed through Steam, and the local work files
-(`work/`), which are not in this repository. `package` also needs the embeddable CPython zip in
-`third_party/python/`.
+- Mega Man Star Force completo: historia, diálogos, pistas, menús, cartas, objetos, correos y tutoriales.
+- Los menús de la colección: menú principal, opciones, galería, música, créditos y juego en red.
+- Los signos ¡ y ¿, que la fuente del juego no tenía.
 
-Known test drift: three checks in `tools/sfes/tests/test_validate.py` expect untranslated entries and the
-warning set from before the translation was finished; they fail on the finished work files.
+Mega Man Star Force 2 y 3 todavía están en inglés.
+
+## Requisitos
+
+- Una copia legal del juego en Steam (Windows 10 u 11, 64 bits). Versión probada: build 23297979 (31/10/2026).
+  Con otra versión el parche también se instala; las líneas que el juego haya cambiado se quedan en inglés.
+- REFramework (gratuito, de código abierto).
+
+## Créditos
+
+Traducción, adaptación, herramientas e instalador: **Diegocorp**.
+REFramework: praydog y colaboradores. Python: Python Software Foundation. fontTools: sus autores. Las licencias
+están en la carpeta [licencias](licencias).
+
+## Aviso legal
+
+Traducción no oficial, gratuita y sin fines de lucro. No está afiliada ni asociada a Capcom, y Capcom no la
+autorizó ni la respalda. Mega Man, Mega Man Star Force y todos los nombres y marcas relacionados pertenecen a
+CAPCOM CO., LTD. Este repositorio no contiene archivos del juego: el instalador los genera en tu PC a partir de
+tu propia copia. Prohibida su venta.
+
+---
+
+Las herramientas para mantener la traducción están en [tools](tools) (en inglés).

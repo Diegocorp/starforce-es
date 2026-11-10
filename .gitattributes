@@ -1,0 +1,8 @@
+# The patch files are stored byte for byte (no line-ending conversion): the .bat files and LEEME.txt are CRLF,
+# the runtime is binary.
+/Instalar.bat -text
+/Desinstalar.bat -text
+/Crear_mod_Fluffy.bat -text
+/LEEME.txt -text
+/programa/** -text
+/licencias/** -text
