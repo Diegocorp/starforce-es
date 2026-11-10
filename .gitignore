@@ -1,0 +1,13 @@
+# Allowlist: everything is local unless listed here. Game data, game text, translation work files,
+# reference material, builds, packages and backups never go to the repository.
+/*
+!/.gitignore
+!/README.md
+!/tools/
+
+# research scripts (local only)
+/tools/investigate/
+
+__pycache__/
+*.pyc
+*.lock
