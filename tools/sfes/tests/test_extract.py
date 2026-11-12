@@ -120,7 +120,7 @@ def test_scope(ps: PakSet, ck: Checker) -> list[scope.FileSpec]:
 
 
 def test_rules(ck: Checker) -> None:
-    lore = "This Tribe of hot-blooded warriors...\r\nWas known as・・・ Zerker!"
+    lore = "This is a sample line of text...\r\nIt was known as・・・ Sample!"
     cases = [("", "cutscene", None, "empty"), ("Hello", "debug_test", None, "skip"),
              ("テスト", "cutscene", None, "skip"), ("日本語", "ui_settings", None, "skip"),
              ("......", "cutscene", None, "keep"), ("<ICON INGAME_KEY_A>", "menu_screen", None, "keep"),
