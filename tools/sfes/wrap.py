@@ -378,7 +378,7 @@ def main(argv: list[str]) -> int:
     metrics = Metrics.load(paks=ps)
     res = final_text(_unescape(args.text), normalize_breaks(_unescape(args.en)),
                      profile=profiles.profile_for(args.path), path=args.path, metrics=metrics,
-                     resolver=InsertResolver(metrics, paks=ps), wrap_mode=args.mode)
+                     resolver=InsertResolver(metrics, paks=ps).for_path(args.path), wrap_mode=args.mode)
     for line, w in zip(res.lines, res.widths_px):
         print(f"{w:8.1f} {res.unit}  {line}")
     print(f"limit {res.max_px:.1f} {res.unit} x {res.max_lines} lines; overflow lines={res.overflow_lines} "

@@ -50,6 +50,7 @@ from . import scope as scopes
 SCOPE = "phase1"
 SPEAKERS_PATH = config.WORK / "glossary" / "cache" / "speakers_sf1.json"
 JA_ALIGN_PATH = config.WORK / "glossary" / "cache" / "ja_align_sf1.json"   # work/glossary/scripts/ja_align.py
+CACHE_DIR = config.WORK / "glossary" / "cache"   # speakers_<game>.json and ja_align_<game>.json of every game
 JA_MESSAGE_MARK = "[mensaje] "
 NAMES_PATH = config.WORK / "glossary" / "names_proposed.json"
 ROW_STATUSES = ("draft", "done", "reviewed", "keep", "todo")
@@ -106,20 +107,24 @@ def file_lock(path: Path, timeout: float = LOCK_TIMEOUT):
             pass
 
 
+def _cache_entries(pattern: str, first: Path) -> dict:
+    """Entries of every cache file matching pattern (SF1, SF2, ...); work-file ids are unique across games."""
+    out: dict = {}
+    for path in [first] + sorted(p for p in CACHE_DIR.glob(pattern) if p != first):
+        try:
+            with open(path, encoding="utf-8") as f:
+                out.update(json.load(f).get("entries", {}))
+        except (OSError, ValueError):
+            continue
+    return out
+
+
 def _speakers() -> dict[str, list]:
-    try:
-        with open(SPEAKERS_PATH, encoding="utf-8") as f:
-            return json.load(f).get("entries", {})
-    except (OSError, ValueError):
-        return {}
+    return _cache_entries("speakers_*.json", SPEAKERS_PATH)
 
 
 def _ja_aligned() -> dict[str, str]:
-    try:
-        with open(JA_ALIGN_PATH, encoding="utf-8") as f:
-            return json.load(f).get("entries", {})
-    except (OSError, ValueError):
-        return {}
+    return _cache_entries("ja_align_*.json", JA_ALIGN_PATH)
 
 
 # -------------------------------------------------------------------------------------------- dump
@@ -363,6 +368,8 @@ def _read_rows(path: Path) -> list[dict]:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="run.py batch")
+    ap.add_argument("--scope", default=SCOPE, choices=sorted(scopes.SCOPE_GROUPS),
+                    help="scope of the work files (default phase1)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("dump")
     d.add_argument("--stem", action="append", required=True)
@@ -375,6 +382,7 @@ def main(argv: list[str]) -> int:
     n = sub.add_parser("import-names")
     n.add_argument("--dry-run", action="store_true")
     n.add_argument("--force", action="store_true")
+    n.add_argument("--names", type=Path, default=NAMES_PATH, help="names_proposed file to import")
     li = sub.add_parser("lint")
     li.add_argument("--stem", action="append")
     li.add_argument("--min-status", default="draft", choices=TRANSLATED)
@@ -386,7 +394,7 @@ def main(argv: list[str]) -> int:
     if args.cmd == "dump":
         stems = [s for item in args.stem for s in item.split(",") if s]
         statuses = {s for s in args.status.split(",") if s} or None
-        data = json.dumps(dump(stems, statuses), ensure_ascii=False, indent=1)
+        data = json.dumps(dump(stems, statuses, scope=args.scope), ensure_ascii=False, indent=1)
         if args.out:
             Path(args.out).parent.mkdir(parents=True, exist_ok=True)
             Path(args.out).write_text(data + "\n", encoding="utf-8")
@@ -396,14 +404,14 @@ def main(argv: list[str]) -> int:
             print(data)
         return 0
     if args.cmd == "apply":
-        res = apply_rows(_read_rows(Path(args.infile)), args.status, dry_run=args.dry_run)
+        res = apply_rows(_read_rows(Path(args.infile)), args.status, scope=args.scope, dry_run=args.dry_run)
         print(f"accepted {res['accepted']}, refused {len(res['refused'])}, files changed {res['files_changed']}"
               + (" (dry run)" if args.dry_run else ""))
         for r in res["refused"]:
             print(f"  REFUSED {r.get('id')}: {r['reason']}")
         return 1 if res["refused"] else 0
     if args.cmd == "import-names":
-        res = import_names(dry_run=args.dry_run, force=args.force)
+        res = import_names(args.names, scope=args.scope, dry_run=args.dry_run, force=args.force)
         print("import-names", "(dry run)" if args.dry_run else "", res["stats"])
         for line in res["problems"][:60]:
             print("  " + line)
@@ -412,14 +420,14 @@ def main(argv: list[str]) -> int:
         return 0
     if args.cmd == "lint":
         stems = [s for item in (args.stem or []) for s in item.split(",") if s] or None
-        found = lint(stems, args.min_status)
+        found = lint(stems, args.min_status, scope=args.scope)
         counts = Counter(f["code"] for f in found)
         for f in found:
             print(f"{f['code']:17s} {f['id']}  [{f['hit']}]  {f['es']!r}")
         print(f"lint: {len(found)} finding(s) {dict(sorted(counts.items()))}")
         return 1 if (found and args.strict) else 0
     if args.cmd == "progress":
-        table = progress(args.by)
+        table = progress(args.by, scope=args.scope)
         cols = ["todo", "draft", "done", "reviewed", "keep", "skip", "empty"]
         print(f"{'':28s} " + " ".join(f"{c:>8s}" for c in cols) + "   chars_todo chars_done")
         tot = Counter()

@@ -454,7 +454,8 @@ def _apply_doc(doc: dict, ps: PakSet, metrics: Metrics, resolver: InsertResolver
         report.notes.append("source_sha256 differs: the work file was extracted from another version of the file")
     profile = profiles.PROFILES[doc["profile"]]
     slot = profile.slot if profile.slot is not None else profiles.observed_slot(path)
-    _apply_entries(doc, msg, _FileContext(path, profile, slot, metrics, resolver), statuses, report)
+    file_resolver = resolver.for_path(path) if resolver is not None else None
+    _apply_entries(doc, msg, _FileContext(path, profile, slot, metrics, file_resolver), statuses, report)
     if not report.entries_applied:
         return report, None
     data = msg23.build(msg)

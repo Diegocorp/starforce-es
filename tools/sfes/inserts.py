@@ -24,6 +24,88 @@ What each insert is assumed to print (InsertResolver.describe() says which rule 
   <DATETIME {0} "fmt">         the format with every date/time field as digits and A as AM/PM;
                                "88:88" when no format is given.
   anything else                default: 8 average lowercase letters of the slot (metrics).
+The rules above are those of SF1 (rr1). The game of the resolver comes from its scope (GAME_OF_SCOPE:
+phase1 -> rr1, sf2 -> rr2, sf3 -> rr3; 'all' has no game and keeps the rr1 code path without name tables,
+as before; sf3 rules below). The validator makes one resolver per base scope and measures
+each work file with the resolver of its own scope; a build uses the resolver of its scope.
+
+SF2 (rr2) rules. The meaning of each code was checked against the DS script commands it replaces
+(research/ds/lc_align_sf2.jsonl + sf2_en.jsonl, named as in brackets) and the rr2 tables; the full table
+with Spanish agreement notes is work/sf2_glossary/inserts/inserts_sf2.txt.
+  Ids go through the English scripts text/rr2/userdata/<table>.user.3.en like the SF1 ones (game id ->
+  show-text GUID -> entry); ids without an entry use the widest entry of the table(s).
+  itemname(id) / itemnamefree(x)     rr2_itemname_eng (256 ids, 118 entries) [printItem / printItemBuffered]
+  btlwarename(id)                    card id // 256 selects rr2_cardname / rr2_cardname2 / rr2_cardname3,
+                                     card id % 256 is the script id (e.g. 2 -> cardname script 2 = entry 2,
+                                     370 -> cardname2 script 114 = entry 50) [printCard]. 246 / 247 are
+                                     the downloaded Mega / Giga Class cards (table entry '????', the real
+                                     name comes with the download): widest card name.
+  btlwarenamefree(x)                 widest name of the three card tables [printCardBuffered]
+  attackstar()                       Star Card mark after a card name: widest of the rr2_cardname3 entries
+                                     of script ids 251-253 (<REPLACE  RR2_STAR1..3>, one glyph)
+                                     [printStarCardValue]
+  abilityname(id)                    rr2_abilityname_eng name + "/" + 3 digits of Link Power cost
+                                     [printAbility + "/" + printAbilityPoints]. Abilities come in up to 4
+                                     cost variants with consecutive ids (rr2_abilityinfo has an entry for
+                                     each) but only one id carries the name: an id without a name takes the
+                                     name of the closest lower id of the same run (73 -> 70 = entry 28).
+  abilityname_nocost(id)             the name only [printAbility]
+  abilityname_free(x)                widest name + "/" + 3 digits [printAbilityBuffered + points]
+  abilityname_nocost_free(x)         widest name [printAbilityBuffered]
+  folder_name(id)                    rr2_deckname_eng, script id = id & 0x3F (65 -> script id 1) [printFolder]
+  emnamefree(x)                      widest virus name of rr2_emname1_eng [printEnemyBuffered]
+  subaru_name()                      'Geo' or 'Mega Man' (whichever applies at the time): the wider
+                                     [printGeoMegaMan]
+  numdisp(fmt, v), {n}, REF, PLATMSG, DATETIME   as for SF1 (low nibble of fmt = minLength of the DS
+                                     printBuffer command)
+  Player-entered texts: N average lowercase letters, N = the input field's maximum length (the asterisks
+  of rr2_subinput_eng): handle 10, subject 12, message / secret 17 per line, Best Combo name 8.
+  option(0..3)                       string buffer filled by the screen [printStringBuffer]: 0 = handle
+                                     (10), 1 = mail subject or handle (12), 2 = mail message line or screen
+                                     name (17), 3 = secret line (17); others default.
+  brother(n), subplayer_plname(), subaru_profile_name(), autobrother_name()
+                                     handle names (10) [printBrotherName, Brother pop-up placeholder,
+                                     printPlayerName, printAutoBrotherName]
+  legendcombo_name(id), bestcombo()  Best Combo name (8) [printLegendForce, printBestCombo]
+  subaru_profile(n), brother_profile(n), wordbox_profile(n), brother_kotoba_free(n, ...)
+                                     profile word n with the field's length SF2_PROFILE_LETTERS[n]
+                                     [printProfilePlayer..., printProfileBrother..., printProfileBuffered...]
+  brother_profile_name(n)            entry n of a random Brother's profile without colour: a profile word
+                                     as above (5 = favorite celebrity), n = 10 the Brother's handle (10)
+                                     [printProfileBrotherRandomName]
+  option_profile(n)                  a profile word in a string buffer: the longest field (17)
+                                     [printStringBufferColored]
+
+SF3 (rr3) rules. SF3 has its own command names (none is used by any SF1 or SF2 text, in any language). The
+meaning of each code was checked against its English and Japanese context and the rr3 tables; the full table
+with Spanish agreement notes is work/sf3_glossary/inserts/inserts_sf3.txt. Ids go through the English
+scripts text/rr3/userdata/<stem>.user.3.en (for every table used, game id = entry index); an id without an
+entry uses the widest entry of the table. Tables are SF3_TABLES (keys = rr3 stems).
+  areaname / cardname / emname / keyname (keyitemname) / keyword / mannname (manname) / nickname /
+  popname (popupname) / subname (subcardname) / weaponname / fldrname (foldername) / pwrname (powerupname) /
+  abliname (abilityname) (id)        that table's entry (SF3_ID_COMMANDS)
+  insert_pl_name()                   the player: rr3_nickname 0 'Geo' or 1 'Mega Man', the wider
+  ablity_lv(n)                       after abliname: "/" + 3 digits (Link Power cost of cost variant n)
+  num_lN(d) / num_rN(d) / num_0rN(d) number slot N (left, right or zero padded): d digits (decimal or 0x)
+  key_item_num()                     number of Omega Pieces: 2 digits
+  sservername(), noisename_rN(), wout_area_name()   widest of rr3_sservername, rr3_noise_chg_name,
+                                     rr3_areaname + rr3_g_areaname
+  strN()                             string slot N filled by the screen (codename, card, item, ability, server,
+                                     folder, team, noise name, Friend Code): the widest of a name of
+                                     SF3_STRING_TABLES, a Codename (10 letters) and a Friend Code (12 digits)
+  pro_text_NN(), pro_text_my_NN()    profile word NN of a Brother / of the player: input length of field NN
+                                     (SF3_PROFILE_LETTERS, rr3_subinput_v_eng)
+  pro_text_my_name(), pro_name_NN()  a Codename (10)
+  pro_res_rN()                       answer N given to the Satella Police robot: 1 hometown (8), 2 sport (8)
+  Codes SF3 does not use (option, itemname, ...) keep the old sf3 behaviour (default widths).
+Selecting the rules by file: for_path(pak path) is the resolver of that file's game (scope_of_path: rr2 ->
+sf2, rr3 -> sf3, rr1 / common -> phase1) with the same settings; for_scope(scope) likewise. A tool that
+measures files of several games with one resolver gets the right rules by measuring each file with
+resolver.for_path(path). Codes that only SF2 uses (SF2_ONLY_COMMANDS; no SF1 or SF3 text has them) are
+handed to the sf2 resolver by every other resolver, and likewise SF3 codes (sf3_rule_name) to the sf3
+resolver, so even a resolver of the wrong scope measures them as their game does; codes shared with SF1
+(option, itemname, btlwarename, ...) follow the resolver's own scope.
+
 Table texts are Spanish when the table's work file (work/strings/<scope>/<group>/<stem>.json) has the entry
 with a status at or above `min_status` (draft < done < reviewed; default draft, pass the build's minimum)
 and a non-empty es, otherwise English. Missing or unreadable work files are treated as untranslated.
@@ -32,7 +114,8 @@ defined by the English (sfes.wrap observed limits) are measured with it. Text in
 measured with the same rules (codes inside card names, e.g. <REPLACE  RR1_EX>, count as usual); a
 multi-line entry counts as its widest line.
 
-CLI: run.py inserts [--scope phase1] [--slot N] [--size PX] TEXT...   e.g. "_CMD_insert_itemname(112)"
+CLI: run.py inserts [--scope phase1 | --path PAK_PATH] [--slot N] [--size PX] TEXT...
+     e.g. "_CMD_insert_itemname(112)"; --path selects the scope of that file's game.
 """
 from __future__ import annotations
 
@@ -74,7 +157,38 @@ SF1_TABLES = {
     "card": TableSpec("natives/stm/text/rr1/message/eng/rr1_chipname_eng.msg.23",
                       "natives/stm/text/rr1/userdata/chipname.user.3.en"),
 }
-TABLES_BY_SCOPE = {"phase1": SF1_TABLES}
+RR2_TEXT = "natives/stm/text/rr2/"
+
+
+def _rr2_table(stem: str) -> TableSpec:
+    return TableSpec(f"{RR2_TEXT}message/eng/rr2_{stem}_eng.msg.23", f"{RR2_TEXT}userdata/{stem}.user.3.en")
+
+
+SF2_TABLES = {
+    "item": _rr2_table("itemname"),
+    "card": _rr2_table("cardname"),             # card ids 0-255
+    "card2": _rr2_table("cardname2"),           # card ids 256-511
+    "card3": _rr2_table("cardname3"),           # card ids 512-767; script ids 251-253 = star marks
+    "ability": _rr2_table("abilityname"),
+    "ability_info": _rr2_table("abilityinfo"),  # only its ids are used: which ids are abilities
+    "folder": _rr2_table("deckname"),
+    "enemy": _rr2_table("emname1"),             # viruses
+}
+RR3_TEXT = "natives/stm/text/rr3/"
+
+
+def _rr3_table(stem: str) -> TableSpec:
+    return TableSpec(f"{RR3_TEXT}message/eng/rr3_{stem}_eng.msg.23", f"{RR3_TEXT}userdata/{stem}.user.3.en")
+
+
+# SF3 tables are keyed by their stem, so no SF1 key ('player', 'item', 'card') is ever found for sf3: the codes
+# SF3 shares with no game keep the old sf3 behaviour (default widths).
+SF3_TABLES = {stem: _rr3_table(stem) for stem in (
+    "areaname", "g_areaname", "cardname", "spcardname", "subcardname", "keyitemname", "keyword", "abilityname",
+    "powerupname", "emname", "manname", "nickname", "popupname", "sservername", "weaponname", "foldername",
+    "noise_chg_name", "teamname")}
+TABLES_BY_SCOPE = {"phase1": SF1_TABLES, "sf2": SF2_TABLES, "sf3": SF3_TABLES}
+GAME_OF_SCOPE = {"phase1": "rr1", "sf2": "rr2", "sf3": "rr3"}
 COMMON_TABLES = {"localize": TableSpec(LOCALIZE, None)}
 # command name -> (table, lookup): 'id' = first argument is a game id, 'any' = runtime variable (widest)
 TABLE_COMMANDS = {
@@ -85,17 +199,103 @@ TABLE_COMMANDS = {
 }
 PLAYER_OPTIONS = {0: "player given name", 1: "player family name"}
 
+# ---- SF2 (rr2)
+SF2_CARD_TABLES = ("card", "card2", "card3")    # card id // 256 -> table, card id % 256 -> script id
+SF2_DOWNLOAD_CARDS = (246, 247)                 # downloaded Mega / Giga Class card: entry '????' -> widest
+SF2_STAR_IDS = (251, 252, 253)                  # rr2_cardname3 script ids of <REPLACE  RR2_STAR1..3>
+SF2_GEO_MEGAMAN = ("Geo", "Mega Man")           # printGeoMegaMan; both names stay the same in Spanish
+SF2_ABILITY_VARIANTS = 4                        # cost variants per ability (consecutive ids)
+SF2_ABILITY_COST = "/"                          # printAbility + "/" + printAbilityPoints
+SF2_ABILITY_COST_DIGITS = 3                     # Link Power costs have up to 3 digits (numdisp 0x13)
+SF2_FOLDER_ID_MASK = 0x3F                       # folder_name(65) = deckname script id 1
+# Maximum lengths of player-entered texts: asterisks of the input fields of rr2_subinput_eng.
+SF2_INPUT_LETTERS = {"handle": 10, "subject": 12, "message": 17, "secret": 17, "combo": 8}
+# Profile words (index n of subaru_profile(n) etc.): field name and maximum length. The English input
+# screen has no field for the catchphrase (rr2_subinput_eng 9 is blank); 3 is the Japanese limit.
+SF2_PROFILE_FIELDS = ("favorite food", "hometown", "recent interests", "favorite TV show", "catchphrase",
+                      "favorite celebrity", "dislikes", "words to live by", "treasured item",
+                      "best physical feature")
+SF2_PROFILE_LETTERS = (8, 8, 12, 10, 3, 10, 8, 17, 8, 8)
+SF2_PROFILE_HANDLE = 10                         # brother_profile_name(10): the Brother's handle
+# insert_option(n): the screen's string buffer n -> (most frequent content, letters).
+SF2_OPTIONS = {0: ("handle name", 10), 1: ("mail subject or handle name", 12),
+               2: ("mail message line or a name the screen shows", 17), 3: ("secret line", 17)}
+# Codes that only SF2 uses (any other resolver hands them to the sf2 resolver).
+SF2_ONLY_COMMANDS = frozenset({
+    "insert_subaru_name", "insert_attackstar", "insert_subplayer_plname", "insert_subaru_profile",
+    "insert_brother_profile", "insert_wordbox_profile", "insert_brother_kotoba_free",
+    "insert_brother_profile_name", "insert_subaru_profile_name", "insert_autobrother_name",
+    "insert_option_profile", "insert_bestcombo", "insert_folder_name", "insert_abilityname",
+    "insert_abilityname_free", "insert_abilityname_nocost", "insert_abilityname_nocost_free",
+})
+
+# ---- SF3 (rr3)
+# command (name without _CMD_) -> table whose entry the first argument names (game id through the script).
+SF3_ID_COMMANDS = {
+    "areaname": "areaname", "cardname": "cardname", "emname": "emname", "keyname": "keyitemname",
+    "keyword": "keyword", "mannname": "manname", "nickname": "nickname", "popname": "popupname",
+    "subname": "subcardname", "weaponname": "weaponname", "fldrname": "foldername", "pwrname": "powerupname",
+    "abliname": "abilityname",
+}
+SF3_PLAYER_NICKNAMES = (0, 1)                   # rr3_nickname 0 'Geo', 1 'Mega Man': insert_pl_name()
+SF3_WAVE_OUT_TABLES = ("areaname", "g_areaname")
+# Everything a string slot _CMD_strN() holds in the English: names of these tables, a Codename, a Friend Code.
+SF3_STRING_TABLES = ("cardname", "spcardname", "subcardname", "keyitemname", "abilityname", "powerupname",
+                     "weaponname", "sservername", "foldername", "teamname", "noise_chg_name")
+SF3_ABILITY_COST = "/"                          # ablity_lv(n): "/" + Link Power cost of cost variant n
+SF3_ABILITY_COST_DIGITS = 3                     # "uses _CMD_num_r4(3)p of Link Power" (rr3_subability_w 3)
+SF3_KEY_ITEM_DIGITS = 2                         # key_item_num(): the number of Omega Pieces
+# Maximum lengths of player-entered texts: asterisks of the input fields of rr3_subinput_v_eng.
+SF3_INPUT_LETTERS = {"codename": 10, "friend code": 12, "team name": 12, "message": 16, "folder name": 8}
+# Profile words pro_text_NN / pro_text_my_NN: field NN (order of rr3_subprofileedit_v_eng 1-8) and the
+# maximum length of its input field (rr3_subinput_v_eng 8-15).
+SF3_PROFILE_FIELDS = ("favorite Battle Card", "favorite boss", "weakness", "hometown", "favorite sport",
+                      "one-liner", "disliked food", "favorite game")
+SF3_PROFILE_LETTERS = (10, 11, 11, 8, 8, 16, 8, 15)
+# pro_res_rN: answer N the player gives the Satella Police robot (rr3_npc_st9002: 1 hometown, 2 sport).
+SF3_PROFILE_ANSWERS = {1: 3, 2: 4}              # answer slot -> profile field
+SF3_PATTERNS = (                                # name pattern -> rule name (see InsertResolver._sf3_*)
+    (re.compile(r"str\d+"), "string"),
+    (re.compile(r"num_(?:l|r|0r)\d+"), "number"),
+    (re.compile(r"pro_text_(?:my_)?(\d+)"), "profile"),
+    (re.compile(r"pro_text_my_name|pro_name_\d+"), "codename"),
+    (re.compile(r"pro_res_r(\d+)"), "answer"),
+    (re.compile(r"noisename_r\d+"), "noise"),
+)
+SF3_FIXED_COMMANDS = {"insert_pl_name": "player", "ablity_lv": "cost", "key_item_num": "pieces",
+                      "sservername": "server", "wout_area_name": "wave_out"}
+
+
+def sf3_rule_name(name: str) -> str | None:
+    """Rule of an SF3 command name ('table' for SF3_ID_COMMANDS), or None when SF3 has no rule for it."""
+    if name in SF3_ID_COMMANDS:
+        return "table"
+    if name in SF3_FIXED_COMMANDS:
+        return SF3_FIXED_COMMANDS[name]
+    return next((rule for rx, rule in SF3_PATTERNS if rx.fullmatch(name)), None)
+
+
+def scope_of_path(path: str) -> str:
+    """Base scope of a msg path's game: rr2 -> sf2, rr3 -> sf3, anything else (rr1, common) -> phase1."""
+    for scope, game in GAME_OF_SCOPE.items():
+        if path.startswith(f"natives/stm/text/{game}/"):
+            return scope
+    return "phase1"
+
 
 @dataclass(frozen=True)
 class Assumption:
-    """What an insert prints: the widest of `texts`, plus `digits` digits, or the default width.
-    `rule` is one of player, table_id, table_widest, digits, ref, platmsg, datetime, default;
-    `note` says what was assumed (for reports)."""
+    """What an insert prints: the widest of `texts`, plus `digits` digits, plus `letters` average lowercase
+    letters, or the default width. `rule` is one of player, table_id, table_widest, digits, ref, platmsg,
+    datetime, default (SF1 and SF2), input (player-entered text), names (fixed names; SF2), slot (SF3 string
+    slot: the widest of `alternatives`); `note` says what was assumed (for reports)."""
     rule: str
     note: str
     texts: tuple[str, ...] = ()
     digits: int = 0
     default: bool = False
+    letters: int = 0
+    alternatives: tuple["Assumption", ...] = ()    # when given: the width is the widest of these
 
 
 @dataclass
@@ -307,6 +507,11 @@ def _quote(text: str, limit: int = 40) -> str:
     return repr(s if len(s) <= limit else s[:limit - 3] + "...")
 
 
+def _input(what: str, letters: int) -> Assumption:
+    """A player-entered text of at most `letters` characters, measured as that many average lowercase letters."""
+    return Assumption("input", f"{what}: {letters} average lowercase letters", letters=letters)
+
+
 # ---------------------------------------------------------------------------------------- resolver
 
 class InsertResolver:
@@ -318,7 +523,9 @@ class InsertResolver:
                  min_status: str = TRANSLATED_ORDER[0], english_only: bool = False):
         self.metrics = metrics
         self.scope = scope
+        self.game = GAME_OF_SCOPE.get(scope)
         self.english_only = english_only
+        self.min_status = min_status
         work = None if english_only else Path(work_dir) if work_dir else config.STRINGS
         self.work = WorkTexts(work, scope, statuses_from(min_status))
         self._paks = paks
@@ -329,6 +536,7 @@ class InsertResolver:
         self._widths: dict[tuple[str, int], float] = {}
         self._depth = 0
         self._english: InsertResolver | None = None
+        self._others: dict[str, InsertResolver] = {}
 
     @property
     def paks(self) -> PakSet:
@@ -345,9 +553,39 @@ class InsertResolver:
                                            ref_index_path=self._ref_index_path, english_only=True)
         return self._english
 
+    def for_scope(self, scope: str) -> InsertResolver:
+        """A resolver of `scope` with this resolver's settings (work files, paks, min_status, english_only);
+        itself for its own scope. Created once per scope."""
+        if scope == self.scope:
+            return self
+        if scope not in self._others:
+            other = InsertResolver(self.metrics, scope, self.work.work_dir, self.paks, self._ref_index_path,
+                                   min_status=self.min_status, english_only=self.english_only)
+            other._others[self.scope] = self        # and back: one resolver per scope in the family
+            self._others[scope] = other
+        return self._others[scope]
+
+    def for_path(self, path: str) -> InsertResolver:
+        """The resolver whose rules apply to the msg file `path`: for_scope(scope_of_path(path))."""
+        return self.for_scope(scope_of_path(path))
+
+    def _delegate(self, token: codes.Token) -> InsertResolver | None:
+        """The sf2 resolver for a code that only SF2 uses, the sf3 resolver for a code that only SF3 uses
+        (sf3_rule_name; no SF1 or SF2 text has them), when this is not that resolver; else None."""
+        if token.kind != "cmd":
+            return None
+        if self.scope != "sf2" and token.name in SF2_ONLY_COMMANDS:
+            return self.for_scope("sf2")
+        if self.scope != "sf3" and sf3_rule_name(token.name or "") is not None:
+            return self.for_scope("sf3")
+        return None
+
     # ---- public API
 
     def width_em(self, token: codes.Token, slot: int) -> float:
+        other = self._delegate(token)
+        if other is not None:
+            return other.width_em(token, slot)
         key = (token.raw, slot)
         if key in self._widths:
             return self._widths[key]
@@ -360,12 +598,15 @@ class InsertResolver:
         return f"{token.raw}: {self.assumption(token).note}"
 
     def assumption(self, token: codes.Token) -> Assumption:
+        other = self._delegate(token)
+        if other is not None:
+            return other.assumption(token)
         if token.raw not in self._assumptions:
             self._assumptions[token.raw] = self._assume(token)
         return self._assumptions[token.raw]
 
     def table(self, name: str) -> Table | None:
-        """A name table of the scope ('player', 'item', 'card') or 'localize'; None if unknown or missing."""
+        """A name table of the scope (SF1_TABLES / SF2_TABLES keys) or 'localize'; None if unknown or missing."""
         if name not in self._tables:
             spec = TABLES_BY_SCOPE.get(self.scope, {}).get(name) or COMMON_TABLES.get(name)
             self._tables[name] = self._load_table(spec) if spec else None
@@ -376,8 +617,13 @@ class InsertResolver:
     def _measure(self, a: Assumption, slot: int) -> float:
         if a.default:
             return self.metrics.default_insert_em(slot)
+        if a.alternatives:
+            return max(self._measure(x, slot) for x in a.alternatives)
         text = max((self._text_em(t, slot) for t in a.texts), default=0.0)
-        return text + a.digits * self.metrics.digit_em(slot)
+        width = text + a.digits * self.metrics.digit_em(slot)
+        if a.letters:
+            width += a.letters * self.metrics.avg_lowercase_em(slot)
+        return width
 
     def _text_em(self, text: str, slot: int) -> float:
         nested = self if self._depth < MAX_NESTING else None
@@ -395,17 +641,26 @@ class InsertResolver:
                               digits=PLACEHOLDER_DIGITS)
         if token.kind == "tag":
             return self._assume_tag(token)
+        if token.name == "insert_numdisp":
+            return self._assume_numdisp(token)
+        if self.game == "rr2":
+            return self._assume_sf2(token)
+        if self.game == "rr3":
+            found = self._assume_sf3(token)
+            if found is not None:
+                return found
         if token.name == "insert_option":
             return self._assume_option(token)
         if token.name in TABLE_COMMANDS:
             return self._assume_table(token, *TABLE_COMMANDS[token.name])
-        if token.name == "insert_numdisp":
-            fmt = _hex_arg(_first_arg(token))
-            digits = 0 if fmt is None else fmt & 0xF
-            if digits:
-                return Assumption("digits", f"number: {digits} digits", digits=digits)
-            return self._default(f"number format {_first_arg(token)!r} has no digit count")
         return self._default("no rule for this insert")
+
+    def _assume_numdisp(self, token: codes.Token) -> Assumption:
+        fmt = _hex_arg(_first_arg(token))
+        digits = 0 if fmt is None else fmt & 0xF
+        if digits:
+            return Assumption("digits", f"number: {digits} digits", digits=digits)
+        return self._default(f"number format {_first_arg(token)!r} has no digit count")
 
     def _default(self, why: str) -> Assumption:
         return Assumption("default", f"{why}; default 8 x average lowercase", default=True)
@@ -462,6 +717,216 @@ class InsertResolver:
             return self._default(f"no platform variants for {target}")
         return Assumption("platmsg", f"widest of {len(variants)} variants of {target}", texts=tuple(variants))
 
+    # ---- SF2 rules
+
+    def _assume_sf2(self, token: codes.Token) -> Assumption:
+        rule = SF2_RULES.get(token.name or "")
+        return rule(self, token) if rule else self._default("no SF2 rule for this insert")
+
+    def _sf2_option(self, token: codes.Token) -> Assumption:
+        n = _int_arg(_first_arg(token))
+        if n not in SF2_OPTIONS:
+            return self._default(f"option({_first_arg(token)}) is filled at run time")
+        what, letters = SF2_OPTIONS[n]
+        return _input(f"string buffer {n}: {what}", letters)
+
+    def _sf2_item(self, token: codes.Token) -> Assumption:
+        return self._assume_table(token, "item", "id")
+
+    def _sf2_item_free(self, token: codes.Token) -> Assumption:
+        return self._assume_table(token, "item", "any")
+
+    def _sf2_enemy_free(self, token: codes.Token) -> Assumption:
+        return self._assume_table(token, "enemy", "any")
+
+    def _sf2_cards_widest(self, why: str = "") -> Assumption:
+        tables = [t for t in (self.table(n) for n in SF2_CARD_TABLES) if t is not None]
+        if not tables:
+            return self._default(f"no card tables for scope {self.scope}")
+        texts = tuple(text for t in tables for text in t.texts)
+        return Assumption("table_widest", f"{why}widest of {len(texts)} card names (3 tables)", texts=texts)
+
+    def _sf2_card(self, token: codes.Token) -> Assumption:
+        game_id = _int_arg(_first_arg(token))
+        if game_id is None or game_id < 0:
+            return self._sf2_cards_widest(f"card id {_first_arg(token)} has no entry; ")
+        if game_id in SF2_DOWNLOAD_CARDS:
+            return self._sf2_cards_widest(f"card id {game_id} is a downloaded card (name not in the tables); ")
+        k, script_id = divmod(game_id, 256)
+        name = SF2_CARD_TABLES[k] if k < len(SF2_CARD_TABLES) else None
+        table = self.table(name) if name else None
+        idx = table.index_of(script_id) if table else None
+        if idx is None:
+            return self._sf2_cards_widest(f"card id {game_id} has no entry; ")
+        note = (f"card id {game_id} -> {name} {script_id} -> {table.names[idx]} = {_quote(table.texts[idx])} "
+                f"({table.langs[idx]})")
+        return Assumption("table_id", note, texts=(table.texts[idx],))
+
+    def _sf2_card_free(self, token: codes.Token) -> Assumption:
+        return self._sf2_cards_widest()
+
+    def _sf2_star(self, token: codes.Token) -> Assumption:
+        table = self.table("card3")
+        idx = [i for i in (table.index_of(s) for s in SF2_STAR_IDS) if i is not None] if table else []
+        if not idx:
+            return self._default("no star marks in rr2_cardname3")
+        return Assumption("table_widest", f"Star Card mark: widest of {len(idx)} star glyph entries "
+                                          f"(nothing for other cards)", texts=tuple(table.texts[i] for i in idx))
+
+    def _sf2_geo(self, token: codes.Token) -> Assumption:
+        return Assumption("names", "'Geo' or 'Mega Man' (the wider)", texts=SF2_GEO_MEGAMAN)
+
+    def ability_index(self, game_id: int) -> int | None:
+        """rr2_abilityname entry of an ability id: its own name, or the name of the closest lower id of the
+        same run of cost variants (ids that have an rr2_abilityinfo entry, at most 3 steps down)."""
+        names, info = self.table("ability"), self.table("ability_info")
+        if names is None:
+            return None
+        for k in range(game_id, max(game_id - SF2_ABILITY_VARIANTS, -1), -1):
+            idx = names.index_of(k)
+            if idx is not None:
+                return idx
+            if info is None or info.index_of(k) is None:
+                return None
+        return None
+
+    def _sf2_ability(self, token: codes.Token, cost: bool, free: bool) -> Assumption:
+        table = self.table("ability")
+        if table is None:
+            return self._default(f"no ability table for scope {self.scope}")
+        suffix = SF2_ABILITY_COST if cost else ""
+        digits = SF2_ABILITY_COST_DIGITS if cost else 0
+        tail = f" + '{suffix}' + {digits} digits of cost" if cost else ""
+        game_id = None if free else _int_arg(_first_arg(token))
+        idx = None if game_id is None else self.ability_index(game_id)
+        if idx is None:
+            why = "" if free else f"ability id {_first_arg(token)} has no entry; "
+            return Assumption("table_widest", f"{why}widest of {len(table.names)} ability names{tail}",
+                              texts=tuple(t + suffix for t in table.texts), digits=digits)
+        note = (f"ability id {game_id} -> {table.names[idx]} = {_quote(table.texts[idx])} "
+                f"({table.langs[idx]}){tail}")
+        return Assumption("table_id", note, texts=(table.texts[idx] + suffix,), digits=digits)
+
+    def _sf2_folder(self, token: codes.Token) -> Assumption:
+        game_id = _int_arg(_first_arg(token))
+        table = self.table("folder")
+        if table is None:
+            return self._default(f"no folder table for scope {self.scope}")
+        idx = None if game_id is None else table.index_of(game_id & SF2_FOLDER_ID_MASK)
+        if idx is None:
+            return Assumption("table_widest", f"folder id {_first_arg(token)} has no entry; widest of "
+                                              f"{len(table.names)} folder names", texts=tuple(table.texts))
+        note = f"folder id {game_id} -> {table.names[idx]} = {_quote(table.texts[idx])} ({table.langs[idx]})"
+        return Assumption("table_id", note, texts=(table.texts[idx],))
+
+    def _sf2_handle(self, token: codes.Token) -> Assumption:
+        return _input("handle name", SF2_INPUT_LETTERS["handle"])
+
+    def _sf2_combo(self, token: codes.Token) -> Assumption:
+        return _input("Best Combo name", SF2_INPUT_LETTERS["combo"])
+
+    def _sf2_profile(self, token: codes.Token) -> Assumption:
+        n = _int_arg(_first_arg(token))
+        if n is None or not 0 <= n < len(SF2_PROFILE_LETTERS):
+            return _input(f"profile word {_first_arg(token)} (unknown field): the longest field",
+                          max(SF2_PROFILE_LETTERS))
+        return _input(f"profile word {n} ({SF2_PROFILE_FIELDS[n]})", SF2_PROFILE_LETTERS[n])
+
+    def _sf2_profile_name(self, token: codes.Token) -> Assumption:
+        if _int_arg(_first_arg(token)) == SF2_PROFILE_HANDLE:
+            return _input(f"profile entry {SF2_PROFILE_HANDLE}: Brother's handle name", SF2_INPUT_LETTERS["handle"])
+        return self._sf2_profile(token)
+
+    def _sf2_profile_widest(self, token: codes.Token) -> Assumption:
+        return _input("a profile word: the longest field", max(SF2_PROFILE_LETTERS))
+
+    # ---- SF3 rules
+
+    def _assume_sf3(self, token: codes.Token) -> Assumption | None:
+        """The SF3 rule of a command, or None (no SF3 rule: the caller keeps the old rr3 behaviour)."""
+        if token.kind != "cmd":
+            return None
+        rule = sf3_rule_name(token.name or "")
+        return getattr(self, f"_sf3_{rule}")(token) if rule else None
+
+    def _sf3_widest(self, names: tuple[str, ...], what: str, why: str = "") -> Assumption:
+        tables = [(n, t) for n, t in ((n, self.table(n)) for n in names) if t is not None]
+        if not tables:
+            return self._default(f"no {what} table for scope {self.scope}")
+        texts = tuple(text for _, t in tables for text in t.texts)
+        return Assumption("table_widest", f"{why}widest of {len(texts)} {what} (rr3_{'/'.join(n for n, _ in tables)})",
+                          texts=texts)
+
+    def _sf3_table(self, token: codes.Token) -> Assumption:
+        name = SF3_ID_COMMANDS[token.name]
+        table = self.table(name)
+        game_id = _int_arg(_first_arg(token))
+        idx = None if table is None or game_id is None else table.index_of(game_id)
+        if idx is None:
+            return self._sf3_widest((name,), "names", f"{name} id {_first_arg(token)} has no entry; ")
+        note = f"{name} id {game_id} -> {table.names[idx]} = {_quote(table.texts[idx])} ({table.langs[idx]})"
+        return Assumption("table_id", note, texts=(table.texts[idx],))
+
+    def _sf3_player(self, token: codes.Token) -> Assumption:
+        table = self.table("nickname")
+        if table is None or any(table.index_of(k) is None for k in SF3_PLAYER_NICKNAMES):
+            return Assumption("names", "'Geo' or 'Mega Man' (the wider; no rr3_nickname)", texts=SF2_GEO_MEGAMAN)
+        idx = [table.index_of(k) for k in SF3_PLAYER_NICKNAMES]
+        shown = " or ".join(f"{_quote(table.texts[i])} ({table.langs[i]})" for i in idx)
+        return Assumption("names", f"player name: nickname {shown}, the wider",
+                          texts=tuple(table.texts[i] for i in idx))
+
+    def _sf3_cost(self, token: codes.Token) -> Assumption:
+        return Assumption("digits", f"ability cost variant {_first_arg(token)}: '{SF3_ABILITY_COST}' + "
+                                    f"{SF3_ABILITY_COST_DIGITS} digits of Link Power",
+                          texts=(SF3_ABILITY_COST,), digits=SF3_ABILITY_COST_DIGITS)
+
+    def _sf3_pieces(self, token: codes.Token) -> Assumption:
+        return Assumption("digits", f"number of Omega Pieces: {SF3_KEY_ITEM_DIGITS} digits",
+                          digits=SF3_KEY_ITEM_DIGITS)
+
+    def _sf3_number(self, token: codes.Token) -> Assumption:
+        digits = _int_arg(_first_arg(token))
+        if not digits or digits < 0:
+            return self._default(f"number {token.name}({_first_arg(token)}) has no digit count")
+        return Assumption("digits", f"number slot {token.name}: {digits} digits", digits=digits)
+
+    def _sf3_server(self, token: codes.Token) -> Assumption:
+        return self._sf3_widest(("sservername",), "Satellite Server names")
+
+    def _sf3_noise(self, token: codes.Token) -> Assumption:
+        return self._sf3_widest(("noise_chg_name",), "Noise names")
+
+    def _sf3_wave_out(self, token: codes.Token) -> Assumption:
+        return self._sf3_widest(SF3_WAVE_OUT_TABLES, "area names")
+
+    def _sf3_codename(self, token: codes.Token) -> Assumption:
+        return _input("Codename", SF3_INPUT_LETTERS["codename"])
+
+    def _sf3_profile_field(self, n: int | None, what: str) -> Assumption:
+        if n is None or not 0 <= n < len(SF3_PROFILE_LETTERS):
+            return _input(f"{what} (unknown field): the longest field", max(SF3_PROFILE_LETTERS))
+        return _input(f"{what} {n} ({SF3_PROFILE_FIELDS[n]})", SF3_PROFILE_LETTERS[n])
+
+    def _sf3_profile(self, token: codes.Token) -> Assumption:
+        m = SF3_PATTERNS[2][0].fullmatch(token.name)
+        mine = "_my_" in token.name
+        return self._sf3_profile_field(int(m.group(1), 10), "own profile word" if mine else "profile word")
+
+    def _sf3_answer(self, token: codes.Token) -> Assumption:
+        n = int(SF3_PATTERNS[4][0].fullmatch(token.name).group(1), 10)
+        return self._sf3_profile_field(SF3_PROFILE_ANSWERS.get(n), f"answer {n}: profile word")
+
+    def _sf3_string(self, token: codes.Token) -> Assumption:
+        names = self._sf3_widest(SF3_STRING_TABLES, "names")
+        alternatives = (names, _input("Codename", SF3_INPUT_LETTERS["codename"]),
+                        Assumption("digits", "Friend Code: 12 digits", digits=SF3_INPUT_LETTERS["friend code"]))
+        if names.default:
+            alternatives = alternatives[1:]
+        return Assumption("slot", f"string slot {token.name}: the widest of a name (" + ", ".join(
+            SF3_STRING_TABLES) + "), a Codename (10 letters) or a Friend Code (12 digits)",
+                          alternatives=alternatives)
+
     # ---- tables
 
     def _load_table(self, spec: TableSpec) -> Table | None:
@@ -488,15 +953,51 @@ class InsertResolver:
         return [index.get(g) if g else None for g in script_guids(self.paks.read(script))]
 
 
+def _ability_rule(cost: bool, free: bool):
+    return lambda r, token: r._sf2_ability(token, cost=cost, free=free)
+
+
+# SF2 command name -> rule (insert_numdisp is shared with SF1 and handled before these).
+SF2_RULES = {
+    "insert_option": InsertResolver._sf2_option,
+    "insert_itemname": InsertResolver._sf2_item,
+    "insert_itemnamefree": InsertResolver._sf2_item_free,
+    "insert_btlwarename": InsertResolver._sf2_card,
+    "insert_btlwarenamefree": InsertResolver._sf2_card_free,
+    "insert_attackstar": InsertResolver._sf2_star,
+    "insert_subaru_name": InsertResolver._sf2_geo,
+    "insert_abilityname": _ability_rule(True, False),
+    "insert_abilityname_free": _ability_rule(True, True),
+    "insert_abilityname_nocost": _ability_rule(False, False),
+    "insert_abilityname_nocost_free": _ability_rule(False, True),
+    "insert_folder_name": InsertResolver._sf2_folder,
+    "insert_emnamefree": InsertResolver._sf2_enemy_free,
+    "insert_brother": InsertResolver._sf2_handle,
+    "insert_subplayer_plname": InsertResolver._sf2_handle,
+    "insert_subaru_profile_name": InsertResolver._sf2_handle,
+    "insert_autobrother_name": InsertResolver._sf2_handle,
+    "insert_brother_profile_name": InsertResolver._sf2_profile_name,
+    "insert_legendcombo_name": InsertResolver._sf2_combo,
+    "insert_bestcombo": InsertResolver._sf2_combo,
+    "insert_subaru_profile": InsertResolver._sf2_profile,
+    "insert_brother_profile": InsertResolver._sf2_profile,
+    "insert_wordbox_profile": InsertResolver._sf2_profile,
+    "insert_brother_kotoba_free": InsertResolver._sf2_profile,
+    "insert_option_profile": InsertResolver._sf2_profile_widest,
+}
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="inserts", description="Show the assumed width of runtime inserts.")
     ap.add_argument("--scope", default="phase1")
+    ap.add_argument("--path", help="pak path of a msg file: use the scope of its game (overrides --scope)")
     ap.add_argument("--slot", type=int, default=0)
     ap.add_argument("--size", type=float, default=60.0)
     ap.add_argument("codes", nargs="+", help="text containing insert codes")
     args = ap.parse_args(argv)
     ps = PakSet()
-    r = InsertResolver(Metrics.load(paks=ps), scope=args.scope, paks=ps)
+    scope = scope_of_path(args.path) if args.path else args.scope
+    r = InsertResolver(Metrics.load(paks=ps), scope=scope, paks=ps)
     for text in args.codes:
         for tok in codes.tokenize(text):
             if tok.prints == "insert":
