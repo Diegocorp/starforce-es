@@ -34,6 +34,12 @@ python -I -X utf8 tools/run.py package --name MMSFLC_Espanol_v1.1 --author Diego
 dist/MMSFLC_Espanol_v1.1/programa/python/python.exe -I -B -X utf8 tools/patcher_test.py dist/MMSFLC_Espanol_v1.1 build/release_v1
 ```
 
+v1.2 ships SF1, the collection and SF2 while SF3 is still being translated: the build is `--scope all` limited to
+the phase1 and sf2 files (`sfes.build.build(name, "all", fonts="rrsystem", stems=<phase1 + sf2 stems>)`; the
+stem list is too long for the command line). `sfes/data/true_case_paths.json` holds the rr2 paths, derived with the
+casing rule that reproduces every rr1 path (`natives/STM/Text/rrN/Message[/Eng]/RRN_<name>[_ENG].msg.23`,
+`msggui` -> `MsgGUI`).
+
 `--repo` copies the finished package to the repository root. Then commit, push, and attach
 `dist/MMSFLC_Espanol_v1.1.zip` to a GitHub release. On a Windows checkout, stage the `.sh` launchers with
 `git add --chmod=+x` so they keep their executable bit.

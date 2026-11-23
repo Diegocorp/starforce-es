@@ -1,7 +1,7 @@
 # Mega Man Star Force Legacy Collection en español
 
-Traducción al español latinoamericano de **Mega Man Star Force** (el primer juego) y de los menús de la
-colección, para la versión de Steam (Windows y Steam Deck). Gratuita, hecha por fans y no oficial.
+Traducción al español latinoamericano de **Mega Man Star Force** y **Mega Man Star Force 2** y de los menús de
+la colección, para la versión de Steam (Windows y Steam Deck). Gratuita, hecha por fans y no oficial.
 
 ## Descarga
 
@@ -35,10 +35,12 @@ También funciona con Fluffy Mod Manager (`Crear_mod_Fluffy.bat`). Todos los det
 ## Qué incluye
 
 - Mega Man Star Force completo: historia, diálogos, pistas, menús, cartas, objetos, correos y tutoriales.
+- Mega Man Star Force 2 completo (nuevo en la versión 1.2): historia, diálogos, pistas, menús, cartas, objetos,
+  correos, páginas personales y tutoriales.
 - Los menús de la colección: menú principal, opciones, galería, música, créditos y juego en red.
 - Los signos ¡ y ¿, que la fuente del juego no tenía.
 
-Mega Man Star Force 2 y 3 todavía están en inglés.
+Mega Man Star Force 3 todavía está en inglés (su traducción está en curso).
 
 ## Requisitos
 
