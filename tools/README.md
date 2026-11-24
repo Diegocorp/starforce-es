@@ -40,6 +40,9 @@ stem list is too long for the command line). `sfes/data/true_case_paths.json` ho
 casing rule that reproduces every rr1 path (`natives/STM/Text/rrN/Message[/Eng]/RRN_<name>[_ENG].msg.23`,
 `msggui` -> `MsgGUI`).
 
+v1.3 ships all three games: the same `--scope all` build with the phase1, sf2 and sf3 stems. The rr2 and rr3 entries of
+`true_case_paths.json` were checked against the game's own request log (`reframework_loose_files.txt`, 2026-11-23).
+
 `--repo` copies the finished package to the repository root. Then commit, push, and attach
 `dist/MMSFLC_Espanol_v1.1.zip` to a GitHub release. On a Windows checkout, stage the `.sh` launchers with
 `git add --chmod=+x` so they keep their executable bit.
