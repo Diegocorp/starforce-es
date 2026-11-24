@@ -133,8 +133,7 @@ Opción B: Fluffy Mod Manager
      cerrado; se abre y se cierra presionando las dos palancas a la vez
      (L3 + R3).
 
-  El instalador para Steam Deck se probó en Linux, pero todavía no en un
-  Steam Deck. Si algo no funciona, repórtalo (sección 9).
+  Si algo no funciona en tu Steam Deck, repórtalo (sección 9).
 
 
 5. ELEGIR EL IDIOMA EN EL JUEGO

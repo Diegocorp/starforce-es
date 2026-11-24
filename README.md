@@ -30,8 +30,8 @@ español a partir de tu copia del juego y los instala. Para quitar el parche: **
 3. Solo la primera vez: en Steam, haz clic derecho sobre el juego > Propiedades > General > Configuraciones de
    lanzamiento y escribe `WINEDLLOVERRIDES="dinput8=n,b" %command%` (el instalador te avisa si falta).
 
-Para quitar el parche: `bash Desinstalar_SteamDeck.sh`. El instalador para Steam Deck se probó en Linux, pero
-todavía no en un Steam Deck; si algo falla en el tuyo, [repórtalo](https://github.com/Diegocorp/starforce-es/issues).
+Para quitar el parche: `bash Desinstalar_SteamDeck.sh`. Si algo falla en tu Steam Deck,
+[repórtalo](https://github.com/Diegocorp/starforce-es/issues).
 Los pasos completos, con los controles del modo escritorio, están en [LEEME.txt](LEEME.txt), sección 4.
 
 Si el juego no aparece en español, ve a Settings > General Settings > Language > Text y elige "English".
@@ -106,8 +106,8 @@ generates the Spanish files from your own copy of the game and installs them. To
 3. First time only: in Steam, right-click the game > Properties > General > Launch Options and enter
    `WINEDLLOVERRIDES="dinput8=n,b" %command%` (the installer warns you if it is missing).
 
-To remove the patch, run `bash Desinstalar_SteamDeck.sh`. The Steam Deck installer has been tested on Linux but not
-yet on a Steam Deck; if something goes wrong on yours, please [report it](https://github.com/Diegocorp/starforce-es/issues).
+To remove the patch, run `bash Desinstalar_SteamDeck.sh`. If something goes wrong on your Steam Deck, please
+[report it](https://github.com/Diegocorp/starforce-es/issues).
 The full steps, including the Desktop Mode controls, are in [LEEME.txt](LEEME.txt), section 4 (in Spanish).
 
 The patch replaces the English text, so the game must be set to English: if it does not show up in Spanish, go to
